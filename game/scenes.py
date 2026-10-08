@@ -11,6 +11,7 @@ from .characters import DOGS, OUTFITS, PuppyFollower, draw_diana, draw_puppy
 from .player import Player
 from .settings import FALL_LIMIT, GOLD, HEIGHT, OUTLINE, TILE, TITLE, WHITE, WIDTH
 from .tiles import Level
+from .touch import TouchPad
 from .worlds import WORLDS
 
 
@@ -388,6 +389,8 @@ class LevelSelectScene(Scene):
 class PlayScene(Scene):
     FINISH_TIME = 2.2
     RESPAWN_TIME = 0.7
+    PAUSE_BUTTONS = {"resume": pygame.Rect(WIDTH // 2 - 320, HEIGHT // 2 + 10, 300, 80),
+                     "worlds": pygame.Rect(WIDTH // 2 + 20, HEIGHT // 2 + 10, 300, 80)}
 
     def __init__(self, app, index):
         super().__init__(app)
@@ -409,6 +412,14 @@ class PlayScene(Scene):
         self.state = "play"      # play | respawn | finish | paused
         self.timer = 0.0
         self.finished = False
+        self.touchpad = TouchPad()
+
+    def handle_event(self, e):
+        if self.state == "paused" and e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+            if self.PAUSE_BUTTONS["resume"].collidepoint(e.pos):
+                self.state = "play"
+            elif self.PAUSE_BUTTONS["worlds"].collidepoint(e.pos):
+                self.app.switch(LevelSelectScene(self.app, self.index))
 
     def update(self, dt):
         super().update(dt)
@@ -421,6 +432,8 @@ class PlayScene(Scene):
             elif c.back:
                 self.app.switch(LevelSelectScene(self.app, self.index))
             return
+        if self.state == "play":
+            self.touchpad.apply(c)
         if c.back and self.state == "play":
             self.state = "paused"
             return
@@ -510,12 +523,21 @@ class PlayScene(Scene):
         if self.snow:
             self.snow.draw(surf)
         self._draw_hud(surf)
+        touch = getattr(self.app.controls, "touch_mode", False)
+        if touch and self.state in ("play", "respawn"):
+            self.touchpad.draw(surf, self.t)
         if self.state == "paused":
             shade = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
             shade.fill((20, 20, 40, 150))
             surf.blit(shade, (0, 0))
-            draw_text(surf, "Paused", self.app.font_big, (WIDTH / 2, HEIGHT / 2 - 50), GOLD, width=4)
-            draw_text(surf, "SPACE: keep playing     ESC: choose world", self.app.font_small, (WIDTH / 2, HEIGHT / 2 + 30))
+            draw_text(surf, "Paused", self.app.font_big, (WIDTH / 2, HEIGHT / 2 - 70), GOLD, width=4)
+            for key, label in (("resume", "Keep playing"), ("worlds", "Choose world")):
+                rect = self.PAUSE_BUTTONS[key]
+                panel(surf, rect, 230)
+                draw_text(surf, label, self.app.font_mid, rect.center, OUTLINE, outline=None)
+            if not touch:
+                draw_text(surf, "SPACE: keep playing     ESC: choose world", self.app.font_small,
+                          (WIDTH / 2, HEIGHT / 2 + 130))
 
     def _draw_objects(self, surf, off):
         ox, oy = off
@@ -596,6 +618,11 @@ class LevelCompleteScene(Scene):
         self.particles = Particles()
         self.shown = 0
         self.last_pop = 0.0
+        self.tapped = False
+
+    def handle_event(self, e):
+        if e.type == pygame.MOUSEBUTTONDOWN and self.t > 0.6:
+            self.tapped = True
 
     def update(self, dt):
         super().update(dt)
@@ -608,7 +635,7 @@ class LevelCompleteScene(Scene):
         if int((self.t - dt) * 2) != int(self.t * 2):
             self.particles.confetti(WIDTH * (0.2 + 0.6 * ((self.t * 7) % 1)), HEIGHT, 25)
         c = self.app.controls
-        if (c.confirm or c.jump_pressed) and self.t > 0.6:
+        if (c.confirm or c.jump_pressed or self.tapped) and self.t > 0.6:
             if self.index + 1 < len(LEVELS):
                 self.app.switch(PlayScene(self.app, self.index + 1))
             else:
@@ -651,6 +678,11 @@ class EndScene(Scene):
         save = app.save
         self.found = sum(save.best.values())
         self.total = sum(ch == "*" for ldef in LEVELS for row in ldef.rows for ch in row)
+        self.tapped = False
+
+    def handle_event(self, e):
+        if e.type == pygame.MOUSEBUTTONDOWN and self.t > 1.0:
+            self.tapped = True
 
     def update(self, dt):
         super().update(dt)
@@ -658,7 +690,7 @@ class EndScene(Scene):
         if int((self.t - dt) * 3) != int(self.t * 3):
             self.particles.confetti(WIDTH * ((self.t * 3.7) % 1), HEIGHT, 30)
         c = self.app.controls
-        if (c.confirm or c.jump_pressed or c.back) and self.t > 1.0:
+        if (c.confirm or c.jump_pressed or c.back or self.tapped) and self.t > 1.0:
             self.app.switch(TitleScene(self.app))
 
     def draw(self, surf):

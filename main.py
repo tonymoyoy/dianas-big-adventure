@@ -2,6 +2,7 @@
 
     python main.py            play
     python main.py --level 3  jump straight into level 3 (1-10)
+    python main.py --touch    show the phone touch buttons (the mouse acts as a finger)
     python main.py --smoke    headless self-test: an autopilot plays every level
 """
 import argparse
@@ -12,6 +13,7 @@ import sys
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--level", type=int, help="start directly in this level (1-10)")
+    parser.add_argument("--touch", action="store_true", help="show touch buttons; the mouse acts as a finger")
     parser.add_argument("--smoke", action="store_true", help="run the headless autopilot test")
     args = parser.parse_args()
 
@@ -29,7 +31,7 @@ def main():
     from game.levels import LEVELS
     from game.scenes import PlayScene, TitleScene
 
-    app = App()
+    app = App(touch=args.touch)
     if args.level:
         first = PlayScene(app, max(1, min(len(LEVELS), args.level)) - 1)
     else:

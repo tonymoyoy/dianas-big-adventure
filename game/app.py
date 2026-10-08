@@ -12,7 +12,7 @@ FONT_NAMES = ["comicneue", "comicsansms", "arialroundedmtbold", "ubuntu", "dejav
 
 
 class App:
-    def __init__(self, persist_save=True):
+    def __init__(self, persist_save=True, touch=False):
         pygame.mixer.pre_init(RATE, -16, 2, 512)   # must come before pygame.init()
         pygame.init()
         pygame.display.set_caption(TITLE)
@@ -21,7 +21,7 @@ class App:
         except pygame.error:
             self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
-        self.controls = Controls()
+        self.controls = Controls(touch=touch)
         self.save = SaveData(len(LEVELS), persist=persist_save)
         self.sound = Sound()
         self.music = Music()

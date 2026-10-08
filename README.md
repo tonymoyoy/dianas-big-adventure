@@ -21,20 +21,21 @@ The game uses [pygame-ce](https://pyga.me) (the community edition of pygame) for
 | Option | What it does |
 |---|---|
 | `main.py --level 7` | Start straight in a world (1-10) |
+| `main.py --touch` | Show the phone touch buttons; the mouse acts as a finger (for testing) |
 | `main.py --smoke` | Headless self-test: an autopilot plays every level |
 
 ## Controls
 
-| Action | Keyboard | Gamepad |
-|---|---|---|
-| Move | Left / Right or A / D | D-pad or left stick |
-| Jump | Space, Up or W | A / B / X / Y |
-| Confirm | Space or Enter | A, Start |
-| Pause / back | Esc | Back |
-| Music on/off | M | |
-| Fullscreen | F11 | |
+| Action | Keyboard | Gamepad | Touch screen |
+|---|---|---|---|
+| Move | Left / Right or A / D | D-pad or left stick | Hold the ◀ ▶ buttons (bottom left) |
+| Jump | Space, Up or W | A / B / X / Y | Tap the big ▲ button (bottom right) |
+| Confirm | Space or Enter | A, Start | Tap |
+| Pause / back | Esc | Back | ⏸ button (top right), Android back button |
+| Music on/off | M | | |
+| Fullscreen | F11 | | |
 
-The menus also work with the mouse.
+The menus also work with the mouse or by tapping. The touch buttons appear by themselves the first time the screen is touched (and always on Android). You can hold ◀ ▶ and tap jump at the same time.
 
 ## How a game goes
 
@@ -82,9 +83,10 @@ game/
   worlds.py        each world's colours, physics, background and collectible
   music.py         8-bit songs synthesized with numpy
   sound.py         sound effects
-  input.py         keyboard/gamepad input and the test autopilot
+  input.py         keyboard/gamepad/touch input and the test autopilot
+  touch.py         on-screen touch buttons for phones and tablets
   save.py          progress saving
-tests/             level, physics, music, outfit, dog and drawing tests
+tests/             level, physics, music, outfit, dog, drawing and touch tests
 ```
 
 ## Adding or editing a level

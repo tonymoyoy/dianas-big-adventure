@@ -6,8 +6,17 @@ Scenes read:
     confirm       True on the frame Space/Enter/A was pressed
     back          True on the frame Esc/Back was pressed
     nav_x         -1/1 on the frame left/right was pressed (menus)
+
+For touch screens, Controls also tracks "pointers" (fingers, and the mouse when
+touch mode is forced for desktop testing) in game coordinates. game/touch.py turns
+them into move_x / jump_pressed during gameplay.
 """
+import os
+import sys
+
 import pygame
+
+from .settings import HEIGHT, WIDTH
 
 JUMP_KEYS = (pygame.K_SPACE, pygame.K_UP, pygame.K_w)
 CONFIRM_KEYS = (pygame.K_SPACE, pygame.K_RETURN, pygame.K_KP_ENTER)
@@ -16,11 +25,21 @@ RIGHT_KEYS = (pygame.K_RIGHT, pygame.K_d)
 AXIS_DEADZONE = 0.5
 
 
+def on_android():
+    """True when running as an Android app (python-for-android or CPython on Android)."""
+    return hasattr(sys, "getandroidapilevel") or "ANDROID_ARGUMENT" in os.environ   # python-for-android sets this
+
+
 class Controls:
-    def __init__(self):
+    def __init__(self, touch=False):
         self.joysticks = {}
         self.move_x = 0
         self._axis_dir = 0
+        # Touch mode shows the on-screen buttons. It turns on by itself at the first
+        # finger touch; `touch=True` forces it and lets the mouse act as a finger.
+        self.touch_mode = touch or on_android()
+        self.mouse_is_finger = touch
+        self.pointers = {}       # pointer id -> (x, y) in game coordinates, while held
         self.begin_frame()
 
     def begin_frame(self):
@@ -28,14 +47,21 @@ class Controls:
         self.confirm = False
         self.back = False
         self.nav_x = 0
+        self.pointer_downs = []  # (x, y) of pointers pressed this frame
+
+    def _press(self, pid, pos):
+        self.pointers[pid] = pos
+        self.pointer_downs.append(pos)
 
     def handle_event(self, e):
+        if self._handle_pointer(e):
+            return
         if e.type == pygame.KEYDOWN:
             if e.key in JUMP_KEYS:
                 self.jump_pressed = True
             if e.key in CONFIRM_KEYS:
                 self.confirm = True
-            if e.key == pygame.K_ESCAPE:
+            if e.key in (pygame.K_ESCAPE, pygame.K_AC_BACK):   # AC_BACK: Android back button
                 self.back = True
             if e.key in LEFT_KEYS:
                 self.nav_x = -1
@@ -61,6 +87,31 @@ class Controls:
             if d and d != self._axis_dir:
                 self.nav_x = d
             self._axis_dir = d
+
+    def _handle_pointer(self, e):
+        """Track fingers (and the mouse in forced touch mode). Returns True if consumed."""
+        if e.type in (pygame.FINGERDOWN, pygame.FINGERMOTION, pygame.FINGERUP):
+            # SDL reports fingers as 0..1 across the game area (SCALED handles letterboxing)
+            pid = ("finger", e.touch_id, e.finger_id)
+            pos = (e.x * WIDTH, e.y * HEIGHT)
+            if e.type == pygame.FINGERDOWN:
+                self.touch_mode = True
+                self._press(pid, pos)
+            elif e.type == pygame.FINGERMOTION and pid in self.pointers:
+                self.pointers[pid] = pos
+            elif e.type == pygame.FINGERUP:
+                self.pointers.pop(pid, None)
+            return True
+        if self.mouse_is_finger and not getattr(e, "touch", False):
+            if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+                self._press("mouse", e.pos)
+            elif e.type == pygame.MOUSEMOTION and "mouse" in self.pointers:
+                self.pointers["mouse"] = e.pos
+            elif e.type == pygame.MOUSEBUTTONUP and e.button == 1:
+                self.pointers.pop("mouse", None)
+        if e.type in (pygame.WINDOWFOCUSLOST, pygame.APP_WILLENTERBACKGROUND):
+            self.pointers.clear()   # a finger lifted while away would otherwise stay "held"
+        return False
 
     def update(self):
         keys = pygame.key.get_pressed()
