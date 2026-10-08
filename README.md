@@ -16,6 +16,8 @@ python3 -m venv .venv
 
 On Windows, use `.venv\Scripts\python` in place of `.venv/bin/python`.
 
+The game uses [pygame-ce](https://pyga.me) (the community edition of pygame) for its smooth, anti-aliased circles. pygame-ce and regular pygame can't be installed side by side, so if you have an older environment, run `pip uninstall pygame` before installing the requirements.
+
 | Option | What it does |
 |---|---|
 | `main.py --level 7` | Start straight in a world (1-10) |
@@ -76,12 +78,13 @@ game/
   tiles.py         turns a map into collision data, items, springs, trampolines
   player.py        Diana's movement and collision physics
   characters.py    drawing Diana, her outfits and the dogs
+  draw.py          smooth (anti-aliased) circle helper used by all the art
   worlds.py        each world's colours, physics, background and collectible
   music.py         8-bit songs synthesized with numpy
   sound.py         sound effects
   input.py         keyboard/gamepad input and the test autopilot
   save.py          progress saving
-tests/             level, physics, music, outfit and dog tests
+tests/             level, physics, music, outfit, dog and drawing tests
 ```
 
 ## Adding or editing a level

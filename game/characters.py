@@ -7,6 +7,7 @@ from collections import deque
 
 import pygame
 
+from .draw import circle
 from .settings import OUTLINE, WHITE
 
 SKIN = (255, 214, 186)
@@ -102,8 +103,8 @@ def draw_diana(surf, cx, bottom, facing=1, squash=0.0, run_phase=0.0, on_ground=
     head_r = 11 * scale
 
     # Long hair behind everything
-    pygame.draw.circle(surf, OUTLINE, P(-2, 46), head_r * 1.18 + 2)
-    pygame.draw.circle(surf, HAIR, P(-2, 46), head_r * 1.18)
+    circle(surf, OUTLINE, P(-2, 46), head_r * 1.18 + 2)
+    circle(surf, HAIR, P(-2, 46), head_r * 1.18)
     poly(HAIR, [P(-13, 48), P(-15, 30 + math.sin(t * 3) * 1.5), P(-6, 28), P(2, 40)])
 
     # Legs + shoes
@@ -122,19 +123,19 @@ def draw_diana(surf, cx, bottom, facing=1, squash=0.0, run_phase=0.0, on_ground=
     body = [P(-7, 37), P(7, 37), P(8, 26), P(-8, 26)]
     poly(outfit.dress, body)
     pygame.draw.line(surf, outfit.sash, P(-8, 27), P(8, 27), max(2, int(3 * scale)))
-    pygame.draw.circle(surf, outfit.sash, P(-7, 27), 3 * scale)
+    circle(surf, outfit.sash, P(-7, 27), 3 * scale)
     # Puffy sleeves + arms
     for side in (-1, 1):
         sw = -swing * side if on_ground else -6
         hand = P(side * 12 + sw * 0.4, 24 + (6 if not on_ground else 0))
         pygame.draw.line(surf, SKIN, P(side * 8, 34), hand, max(2, int(4 * scale)))
-        pygame.draw.circle(surf, SKIN, hand, 2.5 * scale)
-        pygame.draw.circle(surf, OUTLINE, P(side * 8, 35), 4.5 * scale + 1.5)
-        pygame.draw.circle(surf, outfit.dress, P(side * 8, 35), 4.5 * scale)
+        circle(surf, SKIN, hand, 2.5 * scale)
+        circle(surf, OUTLINE, P(side * 8, 35), 4.5 * scale + 1.5)
+        circle(surf, outfit.dress, P(side * 8, 35), 4.5 * scale)
 
     # Head
-    pygame.draw.circle(surf, OUTLINE, head, head_r + 2)
-    pygame.draw.circle(surf, SKIN, head, head_r)
+    circle(surf, OUTLINE, head, head_r + 2)
+    circle(surf, SKIN, head, head_r)
     # Bangs
     poly(HAIR, [P(-11, 47), P(-9, 54), P(-2, 57), P(6, 56), P(11, 51), P(12, 47), P(6, 51), P(1, 49), P(-4, 51)], 1)
     pygame.draw.line(surf, HAIR_LIGHT, P(-5, 54), P(3, 55), max(1, int(2 * scale)))
@@ -147,9 +148,9 @@ def draw_diana(surf, cx, bottom, facing=1, squash=0.0, run_phase=0.0, on_ground=
             pygame.draw.line(surf, OUTLINE, (e[0] - 2 * scale, e[1]), (e[0] + 2 * scale, e[1]), 2)
         else:
             pygame.draw.ellipse(surf, OUTLINE, pygame.Rect(e[0] - 2.2 * scale, e[1] - 3 * scale, 4.4 * scale, 6 * scale))
-            pygame.draw.circle(surf, WHITE, (e[0] + 0.8 * scale, e[1] - 1.3 * scale), 1.1 * scale)
-    pygame.draw.circle(surf, BLUSH, P(-4, 40.5), 2.2 * scale)
-    pygame.draw.circle(surf, BLUSH, P(9.5, 40.5), 2.2 * scale)
+            circle(surf, WHITE, (e[0] + 0.8 * scale, e[1] - 1.3 * scale), 1.1 * scale)
+    circle(surf, BLUSH, P(-4, 40.5), 2.2 * scale)
+    circle(surf, BLUSH, P(9.5, 40.5), 2.2 * scale)
     mouth = P(2.5, 39.5)
     pygame.draw.arc(surf, (200, 70, 90), pygame.Rect(mouth[0] - 3 * scale, mouth[1] - 3 * scale, 6 * scale, 5 * scale),
                     math.pi * 1.1, math.pi * 1.9, max(1, int(2 * scale)))
@@ -157,7 +158,7 @@ def draw_diana(surf, cx, bottom, facing=1, squash=0.0, run_phase=0.0, on_ground=
     # Princess crown
     crown = [P(-6, 55), P(-6, 61), P(-3, 58), P(0, 63), P(3, 58), P(6, 61), P(6, 55)]
     poly(outfit.crown, crown, 1)
-    pygame.draw.circle(surf, outfit.gem, P(0, 57.5), 1.8 * scale)
+    circle(surf, outfit.gem, P(0, 57.5), 1.8 * scale)
     if (t * 1.3) % 2 < 0.25:  # little twinkle
         tw = P(6, 63)
         pygame.draw.line(surf, WHITE, (tw[0] - 3, tw[1]), (tw[0] + 3, tw[1]), 2)
@@ -191,7 +192,7 @@ def _draw_skirt(surf, outfit, P, poly, t, scale, twirl):
     pattern = outfit.pattern
     if pattern == "dots":
         for i in range(1, 8, 2):
-            pygame.draw.circle(surf, c, hem[i], 1.6 * scale)
+            circle(surf, c, hem[i], 1.6 * scale)
     elif pattern == "rainbow":
         n = len(RAINBOW)
         for j, color in enumerate(RAINBOW):
@@ -224,14 +225,14 @@ def _draw_skirt(surf, outfit, P, poly, t, scale, twirl):
                     pts.append((x + math.cos(a) * rr, y + math.sin(a) * rr))
                 pygame.draw.polygon(surf, c, pts)
             elif pattern == "hearts":
-                pygame.draw.circle(surf, c, (x - r * 0.5, y - r * 0.3), r * 0.6)
-                pygame.draw.circle(surf, c, (x + r * 0.5, y - r * 0.3), r * 0.6)
+                circle(surf, c, (x - r * 0.5, y - r * 0.3), r * 0.6)
+                circle(surf, c, (x + r * 0.5, y - r * 0.3), r * 0.6)
                 pygame.draw.polygon(surf, c, [(x - r * 1.05, y - r * 0.15), (x + r * 1.05, y - r * 0.15), (x, y + r)])
             elif pattern == "flowers":
                 for a in range(5):
                     ang = t + a * math.tau / 5
-                    pygame.draw.circle(surf, c, (x + math.cos(ang) * r * 0.8, y + math.sin(ang) * r * 0.8), r * 0.55)
-                pygame.draw.circle(surf, (255, 210, 70), (x, y), r * 0.5)
+                    circle(surf, c, (x + math.cos(ang) * r * 0.8, y + math.sin(ang) * r * 0.8), r * 0.55)
+                circle(surf, (255, 210, 70), (x, y), r * 0.5)
 
 
 def draw_puppy(surf, cx, bottom, facing=1, t=0.0, moving=False, scale=1.0, dog=DEFAULT_DOG):
@@ -259,7 +260,7 @@ def draw_puppy(surf, cx, bottom, facing=1, t=0.0, moving=False, scale=1.0, dog=D
     tail = [P(-11, 13), P(-17, 13 + wag * 0.4), P(-21, 16 + wag)]
     pygame.draw.lines(surf, OUTLINE, False, tail, w(7))
     pygame.draw.lines(surf, d.coat, False, tail, w(5))
-    pygame.draw.circle(surf, d.marking, tail[-1], 2.5 * scale)
+    circle(surf, d.marking, tail[-1], 2.5 * scale)
     # Body + white chest ruff
     body = pygame.Rect(0, 0, 26 * scale, 14 * scale)
     body.center = P(0, 12)
@@ -276,16 +277,16 @@ def draw_puppy(surf, cx, bottom, facing=1, t=0.0, moving=False, scale=1.0, dog=D
         ear = [P(ex - 3, 25 + hop), P(ex + 3, 26 + hop), P(ex + 1, 32 + hop), P(ex + 3.5 + ear_flop, 30 + hop)]
         poly(d.coat, [ear[0], ear[1], ear[3], ear[2]])
         pygame.draw.line(surf, d.shade, P(ex - 0.5, 26 + hop), P(ex + 1, 30 + hop), w(2))
-    pygame.draw.circle(surf, OUTLINE, head, 8 * scale + 2)
-    pygame.draw.circle(surf, d.coat, head, 8 * scale)
+    circle(surf, OUTLINE, head, 8 * scale + 2)
+    circle(surf, d.coat, head, 8 * scale)
     # White blaze down the face and a white muzzle
     pygame.draw.polygon(surf, d.marking, [P(13, 28 + hop), P(15, 28 + hop), P(17, 19 + hop), P(13, 18 + hop)])
-    pygame.draw.circle(surf, d.marking, P(18, 18 + hop), 4.5 * scale)
+    circle(surf, d.marking, P(18, 18 + hop), 4.5 * scale)
     pygame.draw.line(surf, d.collar, P(7, 15), P(11, 12), w(3))
-    pygame.draw.circle(surf, NOSE, P(21.5, 19 + hop), 1.9 * scale)
+    circle(surf, NOSE, P(21.5, 19 + hop), 1.9 * scale)
     eye = P(12, 22 + hop)
-    pygame.draw.circle(surf, NOSE, eye, 1.7 * scale)
-    pygame.draw.circle(surf, WHITE, (eye[0] + 0.5 * scale * f, eye[1] - 0.6 * scale), 0.7 * scale)
+    circle(surf, NOSE, eye, 1.7 * scale)
+    circle(surf, WHITE, (eye[0] + 0.5 * scale * f, eye[1] - 0.6 * scale), 0.7 * scale)
 
 
 class PuppyFollower:

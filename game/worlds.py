@@ -4,11 +4,13 @@ Everything is drawn with pygame primitives, so there are no image files.
 A World's `draw_background(surf, cam_x, t)` paints the whole screen, and
 `draw_item(surf, cx, cy, size, t)` draws its collectible centered at (cx, cy).
 """
+import functools
 import math
 import random
 
 import pygame
 
+from .draw import circle
 from .settings import GRAVITY, HEIGHT, JUMP_SPEED, OUTLINE, SPRING_SPEED, TILE, WIDTH, WHITE
 
 
@@ -33,7 +35,7 @@ def repeat(cam_x, factor, period):
 
 def cloud(surf, x, y, s, color=WHITE):
     for dx, dy, r in ((0, 0, 22), (24, -10, 28), (52, 0, 22), (26, 6, 22)):
-        pygame.draw.circle(surf, color, (int(x + dx * s), int(y + dy * s)), int(r * s))
+        circle(surf, color, (int(x + dx * s), int(y + dy * s)), int(r * s))
 
 
 def star_points(cx, cy, r_out, r_in, n=5, rot=-math.pi / 2):
@@ -56,12 +58,12 @@ def item_flower(surf, cx, cy, size, t, color=(255, 110, 170)):
     for i in range(5):
         a = t * 0.8 + i * math.tau / 5
         px, py = cx + math.cos(a) * r * 1.2, cy + math.sin(a) * r * 1.2
-        pygame.draw.circle(surf, OUTLINE, (px, py), r + 2)
+        circle(surf, OUTLINE, (px, py), r + 2)
     for i in range(5):
         a = t * 0.8 + i * math.tau / 5
-        pygame.draw.circle(surf, color, (cx + math.cos(a) * r * 1.2, cy + math.sin(a) * r * 1.2), r)
-    pygame.draw.circle(surf, OUTLINE, (cx, cy), r * 0.9 + 2)
-    pygame.draw.circle(surf, (255, 220, 70), (cx, cy), r * 0.9)
+        circle(surf, color, (cx + math.cos(a) * r * 1.2, cy + math.sin(a) * r * 1.2), r)
+    circle(surf, OUTLINE, (cx, cy), r * 0.9 + 2)
+    circle(surf, (255, 220, 70), (cx, cy), r * 0.9)
 
 
 def item_pearl(surf, cx, cy, size, t):
@@ -80,10 +82,10 @@ def item_pearl(surf, cx, cy, size, t):
         pygame.draw.line(surf, (230, 120, 160), (cx, base + 2 * s),
                          (cx + math.cos(a) * 15 * s, base - 4 * s + math.sin(a) * 11 * s), 2)
     pr = 9 * s
-    pygame.draw.circle(surf, OUTLINE, (cx, base - 3 * s), pr + 2)
-    pygame.draw.circle(surf, (245, 240, 255), (cx, base - 3 * s), pr)
-    pygame.draw.circle(surf, (215, 205, 240), (cx + 2 * s, base - 1 * s), pr * 0.6)
-    pygame.draw.circle(surf, WHITE, (cx - 3 * s, base - 6 * s), pr * 0.3)
+    circle(surf, OUTLINE, (cx, base - 3 * s), pr + 2)
+    circle(surf, (245, 240, 255), (cx, base - 3 * s), pr)
+    circle(surf, (215, 205, 240), (cx + 2 * s, base - 1 * s), pr * 0.6)
+    circle(surf, WHITE, (cx - 3 * s, base - 6 * s), pr * 0.3)
     if (t * 1.5) % 2 < 0.3:
         gx, gy = cx + 10 * s, cy - 10 * s
         pygame.draw.line(surf, WHITE, (gx - 4, gy), (gx + 4, gy), 2)
@@ -102,7 +104,7 @@ def item_snowflake(surf, cx, cy, size, t):
                 b = a + side * 0.6
                 mx, my = cx + math.cos(a) * r * 0.6, cy + math.sin(a) * r * 0.6
                 pygame.draw.line(surf, col, (mx, my), (mx + math.cos(b) * r * 0.35, my + math.sin(b) * r * 0.35), wd)
-    pygame.draw.circle(surf, WHITE, (cx, cy), r * 0.22)
+    circle(surf, WHITE, (cx, cy), r * 0.22)
 
 
 def item_chocolate(surf, cx, cy, size, t):
@@ -124,7 +126,7 @@ def item_chocolate(surf, cx, cy, size, t):
     wrap = pygame.Rect(bar.left, foil.bottom, bar.w, bar.bottom - foil.bottom)
     pygame.draw.rect(surf, (255, 105, 170), wrap, border_bottom_left_radius=int(4 * s),
                      border_bottom_right_radius=int(4 * s))
-    pygame.draw.circle(surf, WHITE, wrap.center, 3.5 * s)
+    circle(surf, WHITE, wrap.center, 3.5 * s)
     pygame.draw.rect(surf, OUTLINE, bar.inflate(2, 2), 2, border_radius=int(4 * s))
 
 
@@ -132,7 +134,7 @@ def item_star(surf, cx, cy, size, t):
     r = size * 0.5
     pts = star_points(cx, cy, r, r * 0.45, rot=-math.pi / 2 + math.sin(t * 2) * 0.15)
     outlined_polygon(surf, (255, 225, 70), pts, 3)
-    pygame.draw.circle(surf, (255, 250, 200), (cx - r * 0.15, cy - r * 0.15), r * 0.15)
+    circle(surf, (255, 250, 200), (cx - r * 0.15, cy - r * 0.15), r * 0.15)
 
 
 def item_diamond(surf, cx, cy, size, t):
@@ -181,11 +183,11 @@ def item_icecream(surf, cx, cy, size, t):
     pygame.draw.line(surf, (200, 140, 70), (cx + 6 * s, cy + 3 * s), (cx - 4 * s, cy + 13 * s), 2)
     for dy, color in ((-5, (255, 170, 200)), (-15, (250, 245, 230))):
         p = (cx + tilt, cy + dy * s)
-        pygame.draw.circle(surf, OUTLINE, p, 11 * s + 2)
-        pygame.draw.circle(surf, color, p, 11 * s)
-    pygame.draw.circle(surf, OUTLINE, (cx + tilt + 2 * s, cy - 27 * s), 4 * s + 2)
-    pygame.draw.circle(surf, (230, 40, 70), (cx + tilt + 2 * s, cy - 27 * s), 4 * s)
-    pygame.draw.circle(surf, WHITE, (cx + tilt - 4 * s, cy - 19 * s), 2.5 * s)
+        circle(surf, OUTLINE, p, 11 * s + 2)
+        circle(surf, color, p, 11 * s)
+    circle(surf, OUTLINE, (cx + tilt + 2 * s, cy - 27 * s), 4 * s + 2)
+    circle(surf, (230, 40, 70), (cx + tilt + 2 * s, cy - 27 * s), 4 * s)
+    circle(surf, WHITE, (cx + tilt - 4 * s, cy - 19 * s), 2.5 * s)
 
 
 RAINBOW = [(240, 70, 80), (255, 160, 60), (255, 225, 70), (90, 200, 110), (80, 160, 255), (160, 100, 230)]
@@ -209,9 +211,9 @@ def item_rainbow(surf, cx, cy, size, t):
     for side in (-1, 1):
         x = cx + side * (r - 3 * s)
         for dx, dy, cr in ((-5, 0, 6), (0, -4, 7), (5, 0, 6)):
-            pygame.draw.circle(surf, OUTLINE, (x + dx * s, base + dy * s), cr * s + 2)
+            circle(surf, OUTLINE, (x + dx * s, base + dy * s), cr * s + 2)
         for dx, dy, cr in ((-5, 0, 6), (0, -4, 7), (5, 0, 6)):
-            pygame.draw.circle(surf, WHITE, (x + dx * s, base + dy * s), cr * s)
+            circle(surf, WHITE, (x + dx * s, base + dy * s), cr * s)
 
 
 BARBIE_PINK = (224, 33, 138)   # Pantone 219 C, #E0218A
@@ -230,8 +232,8 @@ def item_purse(surf, cx, cy, size, t):
     outlined_polygon(surf, BARBIE_PINK, bag)
     pygame.draw.line(surf, (255, 120, 190), (cx - 14 * s + sway, cy + 1 * s), (cx + 14 * s + sway, cy + 1 * s), 2)
     hx, hy, r = cx + sway, cy + 6 * s, 4 * s
-    pygame.draw.circle(surf, (255, 205, 60), (hx - r * 0.5, hy - r * 0.2), r * 0.6)
-    pygame.draw.circle(surf, (255, 205, 60), (hx + r * 0.5, hy - r * 0.2), r * 0.6)
+    circle(surf, (255, 205, 60), (hx - r * 0.5, hy - r * 0.2), r * 0.6)
+    circle(surf, (255, 205, 60), (hx + r * 0.5, hy - r * 0.2), r * 0.6)
     pygame.draw.polygon(surf, (255, 205, 60), [(hx - r * 1.05, hy - r * 0.1), (hx + r * 1.05, hy - r * 0.1), (hx, hy + r)])
     if (t * 1.5) % 2 < 0.3:
         gx, gy = cx + 14 * s, cy - 12 * s
@@ -242,20 +244,20 @@ def item_purse(surf, cx, cy, size, t):
 # ----------------------------------------------------------------- backgrounds
 def bg_meadow(world, surf, cam_x, t):
     surf.blit(world.sky, (0, 0))
-    pygame.draw.circle(surf, (255, 245, 170), (820, 90), 70)
-    pygame.draw.circle(surf, (255, 225, 80), (820, 90), 50)
+    circle(surf, (255, 245, 170), (820, 90), 70)
+    circle(surf, (255, 225, 80), (820, 90), 50)
     for base in repeat(cam_x - t * 15, 0.1, 1100):
         cloud(surf, base + 100, 80, 1.2)
         cloud(surf, base + 600, 150, 0.9)
     for base in repeat(cam_x, 0.2, 900):
         for x in (0, 380, 680):
-            pygame.draw.circle(surf, (160, 215, 140), (int(base + x), HEIGHT + 120), 260)
+            circle(surf, (160, 215, 140), (int(base + x), HEIGHT + 120), 260)
     for base in repeat(cam_x, 0.4, 700):
         for x in (120, 470):
-            pygame.draw.circle(surf, (115, 190, 100), (int(base + x), HEIGHT + 90), 190)
+            circle(surf, (115, 190, 100), (int(base + x), HEIGHT + 90), 190)
             trunk = pygame.Rect(int(base + x + 60), HEIGHT - 170, 12, 40)
             pygame.draw.rect(surf, (130, 90, 60), trunk)
-            pygame.draw.circle(surf, (80, 160, 80), (trunk.centerx, trunk.top - 6), 26)
+            circle(surf, (80, 160, 80), (trunk.centerx, trunk.top - 6), 26)
 
 
 def mermaid(surf, x, y, t):
@@ -271,25 +273,25 @@ def mermaid(surf, x, y, t):
     # hair behind, body, shell top
     pygame.draw.ellipse(surf, (230, 80, 70), (x - 20, y - 66, 30, 50))
     pygame.draw.rect(surf, (255, 214, 186), (x - 12, y - 46, 16, 22), border_radius=6)
-    pygame.draw.circle(surf, (190, 130, 230), (x - 8, y - 36), 5)
-    pygame.draw.circle(surf, (190, 130, 230), (x + 1, y - 36), 5)
+    circle(surf, (190, 130, 230), (x - 8, y - 36), 5)
+    circle(surf, (190, 130, 230), (x + 1, y - 36), 5)
     # waving arm
     wave = math.sin(t * 5) * 0.5
     hx, hy = x + 2 + math.cos(-1.2 + wave) * 22, y - 44 + math.sin(-1.2 + wave) * 22
     pygame.draw.line(surf, (255, 214, 186), (x + 2, y - 42), (hx, hy), 5)
-    pygame.draw.circle(surf, (255, 214, 186), (hx, hy), 4)
+    circle(surf, (255, 214, 186), (hx, hy), 4)
     # head + face
-    pygame.draw.circle(surf, OUTLINE, (x - 4, y - 58), 12)
-    pygame.draw.circle(surf, (255, 214, 186), (x - 4, y - 58), 10)
+    circle(surf, OUTLINE, (x - 4, y - 58), 12)
+    circle(surf, (255, 214, 186), (x - 4, y - 58), 10)
     pygame.draw.arc(surf, (230, 80, 70), (x - 16, y - 72, 24, 18), 0, math.pi, 7)
-    pygame.draw.circle(surf, OUTLINE, (x - 1, y - 59), 2)
-    pygame.draw.circle(surf, (255, 150, 160), (x + 2, y - 54), 2)
-    pygame.draw.circle(surf, (255, 120, 180), (x - 12, y - 66), 4)  # hair flower
+    circle(surf, OUTLINE, (x - 1, y - 59), 2)
+    circle(surf, (255, 150, 160), (x + 2, y - 54), 2)
+    circle(surf, (255, 120, 180), (x - 12, y - 66), 4)  # hair flower
 
 
 def bg_lagoon(world, surf, cam_x, t):
     surf.blit(world.sky, (0, 0))
-    pygame.draw.circle(surf, (255, 200, 150), (760, 220), 80)
+    circle(surf, (255, 200, 150), (760, 220), 80)
     for base in repeat(cam_x - t * 12, 0.1, 1200):
         cloud(surf, base + 200, 90, 1.0)
         cloud(surf, base + 800, 60, 0.8)
@@ -305,7 +307,7 @@ def bg_lagoon(world, surf, cam_x, t):
         # bubbles rising
         for i in range(4):
             by = sea_top + 150 - ((t * 30 + i * 37) % 130)
-            pygame.draw.circle(surf, (210, 245, 250), (int(base + 470 + i * 22), int(by)), 4, 2)
+            circle(surf, (210, 245, 250), (int(base + 470 + i * 22), int(by)), 4, 2)
     for base in repeat(cam_x, 0.5, 650):
         for x, hgt in ((80, 170), (390, 210)):
             bx, by = base + x, HEIGHT - 70
@@ -319,7 +321,7 @@ def bg_lagoon(world, surf, cam_x, t):
             for a in (-2.6, -2.0, -1.2, -0.5, 0.1):
                 ex, ey = tx + math.cos(a) * 70, ty + math.sin(a) * 30 + 30
                 pygame.draw.line(surf, (60, 160, 80), (tx, ty), (ex, ey), 10)
-            pygame.draw.circle(surf, (110, 80, 50), (int(tx - 6), int(ty + 10)), 8)
+            circle(surf, (110, 80, 50), (int(tx - 6), int(ty + 10)), 8)
 
 
 def castle(surf, x, base, t):
@@ -349,7 +351,7 @@ def castle(surf, x, base, t):
     door = pygame.Rect(0, 0, 40, 56)
     door.midbottom = (x, base)
     pygame.draw.rect(surf, (200, 110, 160), door, border_top_left_radius=20, border_top_right_radius=20)
-    pygame.draw.circle(surf, (255, 205, 60), (x + 10, base - 26), 3)
+    circle(surf, (255, 205, 60), (x + 10, base - 26), 3)
 
 
 def bg_snow(world, surf, cam_x, t):
@@ -387,7 +389,7 @@ def bg_chocolate(world, surf, cam_x, t):
     for base in repeat(cam_x, 0.2, 800):
         for i, (x, c) in enumerate(((0, (150, 95, 60)), (260, (125, 75, 45)), (520, (165, 110, 70)))):
             cx = int(base + x)
-            pygame.draw.circle(surf, c, (cx, HEIGHT + 30), 200)
+            circle(surf, c, (cx, HEIGHT + 30), 200)
             pts = [(cx - 150 + k * 30, HEIGHT - 120 + (12 if k % 2 else 0) - abs(k - 5) * 6) for k in range(11)]
             pygame.draw.lines(surf, (255, 240, 220), False, pts, 5)
     # near: giant chocolate bars and strawberries
@@ -404,11 +406,11 @@ def bg_chocolate(world, surf, cam_x, t):
             pygame.draw.rect(surf, (255, 210, 80), (wrap.left, wrap.top, wrap.w, 8))
         sx, sy = base + 250, HEIGHT - 95
         pygame.draw.polygon(surf, (235, 60, 80), [(sx - 22, sy - 20), (sx + 22, sy - 20), (sx, sy + 22)])
-        pygame.draw.circle(surf, (235, 60, 80), (int(sx - 11), int(sy - 20)), 11)
-        pygame.draw.circle(surf, (235, 60, 80), (int(sx + 11), int(sy - 20)), 11)
+        circle(surf, (235, 60, 80), (int(sx - 11), int(sy - 20)), 11)
+        circle(surf, (235, 60, 80), (int(sx + 11), int(sy - 20)), 11)
         pygame.draw.polygon(surf, (70, 170, 80), [(sx - 14, sy - 30), (sx, sy - 40), (sx + 14, sy - 30), (sx, sy - 24)])
         for dx, dy in ((-8, -12), (6, -10), (0, 0), (-4, 8), (9, -2)):
-            pygame.draw.circle(surf, (255, 230, 120), (int(sx + dx), int(sy + dy)), 2)
+            circle(surf, (255, 230, 120), (int(sx + dx), int(sy + dy)), 2)
 
 
 def bg_moon(world, surf, cam_x, t):
@@ -416,20 +418,20 @@ def bg_moon(world, surf, cam_x, t):
     for base in repeat(cam_x, 0.05, 1600):
         for i, (x, y) in enumerate(world.stars):
             tw = 1.5 + math.sin(t * 2 + i) * 1.2
-            pygame.draw.circle(surf, WHITE, (int(base + x), y), max(1, int(tw)))
+            circle(surf, WHITE, (int(base + x), y), max(1, int(tw)))
     ex = 780 - cam_x * 0.02
-    pygame.draw.circle(surf, (70, 130, 230), (int(ex), 110), 55)
+    circle(surf, (70, 130, 230), (int(ex), 110), 55)
     for dx, dy, r in ((-15, -10, 18), (12, 14, 14), (20, -20, 9)):
-        pygame.draw.circle(surf, (90, 190, 110), (int(ex + dx), 110 + dy), r)
-    pygame.draw.circle(surf, (200, 230, 255), (int(ex), 110), 55, 3)
+        circle(surf, (90, 190, 110), (int(ex + dx), 110 + dy), r)
+    circle(surf, (200, 230, 255), (int(ex), 110), 55, 3)
     # little ringed planet
     px = 200 - cam_x * 0.03
-    pygame.draw.circle(surf, (240, 160, 90), (int(px), 170), 26)
+    circle(surf, (240, 160, 90), (int(px), 170), 26)
     pygame.draw.ellipse(surf, (255, 220, 160), (px - 45, 162, 90, 16), 3)
     for base in repeat(cam_x, 0.25, 900):
         for x, r in ((0, 220), (450, 260)):
             cx = int(base + x)
-            pygame.draw.circle(surf, (110, 110, 135), (cx, HEIGHT + 100), r)
+            circle(surf, (110, 110, 135), (cx, HEIGHT + 100), r)
             pygame.draw.ellipse(surf, (90, 90, 115), (cx - 60, HEIGHT - 90, 50, 16))
             pygame.draw.ellipse(surf, (90, 90, 115), (cx + 40, HEIGHT - 50, 34, 12))
 
@@ -475,8 +477,8 @@ def bg_woods(world, surf, cam_x, t):
 def ferris_wheel(surf, x, y, r, t):
     rot = t * 0.4
     pygame.draw.polygon(surf, (150, 140, 190), [(x - r * 0.6, HEIGHT), (x, y), (x + r * 0.6, HEIGHT)], 6)
-    pygame.draw.circle(surf, (200, 180, 240), (x, y), r, 5)
-    pygame.draw.circle(surf, (200, 180, 240), (x, y), r * 0.6, 3)
+    circle(surf, (200, 180, 240), (x, y), r, 5)
+    circle(surf, (200, 180, 240), (x, y), r * 0.6, 3)
     for i in range(8):
         a = rot + i * math.tau / 8
         ex, ey = x + math.cos(a) * r, y + math.sin(a) * r
@@ -484,7 +486,7 @@ def ferris_wheel(surf, x, y, r, t):
         cab = pygame.Rect(0, 0, 22, 18)
         cab.midtop = (ex, ey)
         pygame.draw.rect(surf, BALLOON_COLORS[i % 4], cab, border_radius=6)
-    pygame.draw.circle(surf, (255, 205, 60), (x, y), 9)
+    circle(surf, (255, 205, 60), (x, y), 9)
 
 
 def carousel(surf, x, base, t):
@@ -494,7 +496,7 @@ def carousel(surf, x, base, t):
         pygame.draw.line(surf, (255, 215, 90), (px, roof_y), (px, base - 10), 4)
         hy = base - 55 + math.sin(t * 3 + i * 1.5) * 10
         pygame.draw.ellipse(surf, WHITE, (px - 16, hy - 8, 32, 16))
-        pygame.draw.circle(surf, WHITE, (px + 13, int(hy - 10)), 7)
+        circle(surf, WHITE, (px + 13, int(hy - 10)), 7)
     pygame.draw.rect(surf, (255, 150, 200), (x - 95, base - 14, 190, 14), border_radius=5)
     roof = [(x - 105, roof_y), (x, roof_y - 70), (x + 105, roof_y)]
     pygame.draw.polygon(surf, (255, 110, 170), roof)
@@ -503,8 +505,8 @@ def carousel(surf, x, base, t):
         stripe = [(x, roof_y - 70), (x - 105 + 210 * k0, roof_y), (x - 105 + 210 * k1, roof_y)]
         pygame.draw.polygon(surf, WHITE, stripe)
     for i in range(7):
-        pygame.draw.circle(surf, (255, 110, 170) if i % 2 else WHITE, (x - 90 + i * 30, roof_y + 4), 12)
-    pygame.draw.circle(surf, (255, 205, 60), (x, roof_y - 74), 7)
+        circle(surf, (255, 110, 170) if i % 2 else WHITE, (x - 90 + i * 30, roof_y + 4), 12)
+    circle(surf, (255, 205, 60), (x, roof_y - 74), 7)
 
 
 def bg_themepark(world, surf, cam_x, t):
@@ -515,7 +517,7 @@ def bg_themepark(world, surf, cam_x, t):
         color = BALLOON_COLORS[i]
         for j in range(10):
             a = j * math.tau / 10
-            pygame.draw.circle(surf, color, (fx + math.cos(a) * 50 * k, fy + math.sin(a) * 50 * k), max(1, 4 * (1 - k)))
+            circle(surf, color, (fx + math.cos(a) * 50 * k, fy + math.sin(a) * 50 * k), max(1, 4 * (1 - k)))
     for base in repeat(cam_x, 0.15, 1400):
         castle(surf, base + 400, HEIGHT - 80, t)
         ferris_wheel(surf, base + 1000, HEIGHT - 260, 140, t)
@@ -557,8 +559,8 @@ def slide(surf, x, base):
 
 def bg_playground(world, surf, cam_x, t):
     surf.blit(world.sky, (0, 0))
-    pygame.draw.circle(surf, (255, 245, 170), (130, 90), 60)
-    pygame.draw.circle(surf, (255, 225, 80), (130, 90), 42)
+    circle(surf, (255, 245, 170), (130, 90), 60)
+    circle(surf, (255, 225, 80), (130, 90), 42)
     for base in repeat(cam_x - t * 15, 0.1, 1100):
         cloud(surf, base + 300, 80, 1.1)
         cloud(surf, base + 800, 140, 0.8)
@@ -566,7 +568,7 @@ def bg_playground(world, surf, cam_x, t):
         for x in (100, 330, 600):
             pygame.draw.rect(surf, (130, 95, 65), (base + x - 8, HEIGHT - 190, 16, 120))
             for dx, dy, r in ((0, -200, 55), (-40, -170, 40), (40, -170, 40)):
-                pygame.draw.circle(surf, (95, 175, 95), (int(base + x + dx), HEIGHT + dy), r)
+                circle(surf, (95, 175, 95), (int(base + x + dx), HEIGHT + dy), r)
     for base in repeat(cam_x, 0.45, 1000):
         swing_set(surf, base + 200, HEIGHT - 70, t)
         slide(surf, base + 520, HEIGHT - 70)
@@ -579,7 +581,7 @@ def bg_playground(world, surf, cam_x, t):
 
 
 def hot_air_balloon(surf, x, y, color):
-    pygame.draw.circle(surf, color, (x, y), 40)
+    circle(surf, color, (x, y), 40)
     pygame.draw.polygon(surf, color, [(x - 34, y + 20), (x + 34, y + 20), (x + 12, y + 55), (x - 12, y + 55)])
     pygame.draw.ellipse(surf, WHITE, (x - 12, y - 40, 24, 95), 4)
     for dx in (-10, 10):
@@ -587,13 +589,24 @@ def hot_air_balloon(surf, x, y, color):
     pygame.draw.rect(surf, (170, 110, 70), (x - 11, y + 70, 22, 16), border_radius=3)
 
 
+BIG_RAINBOW_R = 330
+
+
+@functools.lru_cache(maxsize=1)
+def big_rainbow():
+    """The Cloud Kingdom's rainbow, drawn once: smooth rings this big are too slow to draw every frame."""
+    r = BIG_RAINBOW_R
+    arc = pygame.Surface((2 * r, r), pygame.SRCALPHA)
+    for i, color in enumerate(RAINBOW):
+        circle(arc, color, (r, r), r - i * 16, 16)
+    return arc
+
+
 def bg_sky(world, surf, cam_x, t):
     surf.blit(world.sky, (0, 0))
     # big rainbow far away
     rx = int(500 - cam_x * 0.03) % 1400 - 200
-    for i, color in enumerate(RAINBOW):
-        r = 330 - i * 16
-        pygame.draw.circle(surf, color, (rx, HEIGHT + 60), r, 16)
+    surf.blit(big_rainbow(), (rx - BIG_RAINBOW_R, HEIGHT + 60 - BIG_RAINBOW_R))
     for base in repeat(cam_x - t * 8, 0.08, 1200):
         cloud(surf, base + 100, 100, 1.4, (250, 250, 255))
         cloud(surf, base + 700, 60, 1.0, (250, 250, 255))
@@ -631,8 +644,8 @@ def dream_house(surf, x, base, t):
     pygame.draw.polygon(surf, BARBIE_PINK, roof)
     pygame.draw.polygon(surf, (190, 20, 110), roof, 4)
     hy = house.top - 40
-    pygame.draw.circle(surf, WHITE, (x - 7, hy - 3), 9)
-    pygame.draw.circle(surf, WHITE, (x + 7, hy - 3), 9)
+    circle(surf, WHITE, (x - 7, hy - 3), 9)
+    circle(surf, WHITE, (x + 7, hy - 3), 9)
     pygame.draw.polygon(surf, WHITE, [(x - 16, hy), (x + 16, hy), (x, hy + 17)])
     door = pygame.Rect(0, 0, 44, 60)
     door.midbottom = (x, base)
@@ -655,15 +668,15 @@ def pink_car(surf, x, base, t):
     pygame.draw.rect(surf, BARBIE_PINK, (body.left + 30, body.top - 16, 70, 20), border_top_left_radius=12)
     pygame.draw.line(surf, (190, 225, 250), (body.left + 40, body.top - 12), (body.left + 50, body.top - 30), 5)
     pygame.draw.rect(surf, WHITE, (body.left + 6, body.top + 12, body.w - 12, 5))
-    pygame.draw.circle(surf, (255, 240, 150), (body.right - 6, body.top + 10), 6)
+    circle(surf, (255, 240, 150), (body.right - 6, body.top + 10), 6)
     for wx in (body.left + 30, body.right - 30):
-        pygame.draw.circle(surf, (60, 50, 70), (wx, base - 14), 16)
-        pygame.draw.circle(surf, WHITE, (wx, base - 14), 7)
+        circle(surf, (60, 50, 70), (wx, base - 14), 16)
+        circle(surf, WHITE, (wx, base - 14), 7)
 
 
 def bg_dream(world, surf, cam_x, t):
     surf.blit(world.sky, (0, 0))
-    pygame.draw.circle(surf, (255, 245, 200), (130, 90), 55)
+    circle(surf, (255, 245, 200), (130, 90), 55)
     for base in repeat(cam_x - t * 12, 0.1, 1100):
         cloud(surf, base + 300, 80, 1.0, (255, 235, 245))
         cloud(surf, base + 800, 130, 0.8, (255, 235, 245))
@@ -675,7 +688,7 @@ def bg_dream(world, surf, cam_x, t):
             pygame.draw.line(surf, WHITE, (sx, sy - 5), (sx, sy + 5), 2)
     for base in repeat(cam_x, 0.2, 900):
         for x in (0, 450):
-            pygame.draw.circle(surf, (255, 190, 220), (int(base + x), HEIGHT + 130), 290)
+            circle(surf, (255, 190, 220), (int(base + x), HEIGHT + 130), 290)
     for base in repeat(cam_x, 0.45, 1100):
         dream_house(surf, base + 260, HEIGHT - 96, t)
         pink_car(surf, base + 820, HEIGHT - 94, t)
@@ -719,11 +732,11 @@ class World:
         s.fill(self.ground)
         dark = [max(0, c - 25) for c in self.ground]
         for _ in range(4):
-            pygame.draw.circle(s, dark, (rng.randrange(6, TILE - 6), rng.randrange(14 if top else 4, TILE - 4)), rng.randrange(2, 5))
+            circle(s, dark, (rng.randrange(6, TILE - 6), rng.randrange(14 if top else 4, TILE - 4)), rng.randrange(2, 5))
         if top:
             pygame.draw.rect(s, self.ground_top, (0, 0, TILE, 12))
             for x in range(0, TILE + 1, 12):
-                pygame.draw.circle(s, self.ground_top, (x, 12), 6)
+                circle(s, self.ground_top, (x, 12), 6)
             light = [min(255, c + 40) for c in self.ground_top]
             pygame.draw.line(s, light, (0, 2), (TILE, 2), 3)
         return s

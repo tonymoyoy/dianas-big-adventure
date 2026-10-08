@@ -6,6 +6,7 @@ import pygame
 from .camera import Camera
 from .effects import Particles, Snow
 from .levels import LEVELS
+from .draw import circle
 from .characters import DOGS, OUTFITS, PuppyFollower, draw_diana, draw_puppy
 from .player import Player
 from .settings import FALL_LIMIT, GOLD, HEIGHT, OUTLINE, TILE, TITLE, WHITE, WIDTH
@@ -37,8 +38,8 @@ FINISH_PINK = (255, 105, 180)
 
 
 def draw_heart(surf, cx, cy, r, color):
-    pygame.draw.circle(surf, color, (cx - r * 0.5, cy - r * 0.2), r * 0.55)
-    pygame.draw.circle(surf, color, (cx + r * 0.5, cy - r * 0.2), r * 0.55)
+    circle(surf, color, (cx - r * 0.5, cy - r * 0.2), r * 0.55)
+    circle(surf, color, (cx + r * 0.5, cy - r * 0.2), r * 0.55)
     pygame.draw.polygon(surf, color, [(cx - r * 1.02, cy - r * 0.05), (cx + r * 1.02, cy - r * 0.05), (cx, cy + r)])
 
 
@@ -47,8 +48,8 @@ def draw_flag_pole(surf, base, height, color, t, wave=True, big=False):
     bx, by = base
     pygame.draw.rect(surf, OUTLINE, (bx - 4, by - height - 2, 8, height + 2), border_radius=3)
     pygame.draw.rect(surf, (235, 235, 235), (bx - 2, by - height, 4, height))
-    pygame.draw.circle(surf, OUTLINE, (bx, by - height - 4), 8)
-    pygame.draw.circle(surf, GOLD, (bx, by - height - 4), 6)
+    circle(surf, OUTLINE, (bx, by - height - 4), 8)
+    circle(surf, GOLD, (bx, by - height - 4), 6)
     if big:
         color = FINISH_PINK
     fw, fh = (70, 48) if big else (40, 28)
@@ -66,8 +67,8 @@ def draw_flag_pole(surf, base, height, color, t, wave=True, big=False):
         draw_heart(surf, hx, hy, fh * 0.28, WHITE)
         for i in range(1, 8, 2):
             x, y = upper[i]
-            pygame.draw.circle(surf, (255, 190, 225), (x, y + 4), 2)
-            pygame.draw.circle(surf, (255, 190, 225), (x, y + fh - 4), 2)
+            circle(surf, (255, 190, 225), (x, y + 4), 2)
+            circle(surf, (255, 190, 225), (x, y + fh - 4), 2)
 
 
 class Scene:
@@ -355,7 +356,7 @@ class LevelSelectScene(Scene):
                 pygame.draw.arc(surf, (230, 230, 230), (cx - 18, cy - 38, 36, 44), 0, math.pi, 6)
                 pygame.draw.rect(surf, GOLD, (cx - 26, cy - 16, 52, 40), border_radius=6)
                 pygame.draw.rect(surf, OUTLINE, (cx - 26, cy - 16, 52, 40), 3, border_radius=6)
-                pygame.draw.circle(surf, OUTLINE, (cx, cy + 2), 5)
+                circle(surf, OUTLINE, (cx, cy + 2), 5)
             else:
                 total = sum(ch == "*" for row in ldef.rows for ch in row)
                 best = self.app.save.best.get(i)
@@ -372,8 +373,8 @@ class LevelSelectScene(Scene):
                 pygame.draw.polygon(surf, OUTLINE, pts, 3)
         for p in range(self.pages):
             x = WIDTH / 2 + (p - (self.pages - 1) / 2) * 28
-            pygame.draw.circle(surf, OUTLINE, (x, 450), 9)
-            pygame.draw.circle(surf, GOLD if p == self.page else WHITE, (x, 450), 6)
+            circle(surf, OUTLINE, (x, 450), 9)
+            circle(surf, GOLD if p == self.page else WHITE, (x, 450), 6)
         sel_rect = self._card_rect(self.selected)
         hop = abs(math.sin(self.t * 4)) * 10
         draw_diana(surf, sel_rect.centerx + 8, sel_rect.top - 14 - hop, 1, 0, 0, True, self.t,
@@ -579,8 +580,8 @@ class PlayScene(Scene):
         goal = self.level.finish_base[0] if self.level.finish else self.level.pixel_w
         k = max(0.0, min(1.0, (self.player.rect.centerx - self.level.start[0]) / max(1, goal - self.level.start[0])))
         draw_flag_pole(surf, (x1 + 4, y + 12), 34, None, self.t, big=True)
-        pygame.draw.circle(surf, OUTLINE, (x0 + (x1 - x0) * k, y), 12)
-        pygame.draw.circle(surf, (255, 145, 60), (x0 + (x1 - x0) * k, y), 9)
+        circle(surf, OUTLINE, (x0 + (x1 - x0) * k, y), 12)
+        circle(surf, (255, 145, 60), (x0 + (x1 - x0) * k, y), 9)
         draw_text(surf, self.world.name, self.app.font_small, (WIDTH - 130, 40))
 
 
@@ -634,7 +635,7 @@ class LevelCompleteScene(Scene):
             if i < self.collected:
                 self.world.draw_item(surf, x, y, size, self.t + i)
             else:
-                pygame.draw.circle(surf, (200, 200, 210), (x, y), size * 0.35, 3)
+                circle(surf, (200, 200, 210), (x, y), size * 0.35, 3)
         nxt = "SPACE: next world!" if self.index + 1 < len(LEVELS) else "SPACE: celebrate!"
         if (self.t % 1.2) < 0.85:
             draw_text(surf, nxt, self.app.font_mid, (WIDTH / 2, box.bottom - 40))

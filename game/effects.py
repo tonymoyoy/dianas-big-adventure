@@ -4,6 +4,7 @@ import random
 
 import pygame
 
+from .draw import circle
 from .settings import HEIGHT, WIDTH, WHITE
 
 CONFETTI = [(255, 90, 90), (255, 200, 60), (90, 200, 120), (80, 160, 255), (200, 110, 255), (255, 140, 200)]
@@ -74,7 +75,7 @@ class Particles:
             x, y = p.x - ox, p.y - oy
             if p.kind == "ring":
                 r = p.size * (1.6 - k)
-                pygame.draw.circle(surf, p.color, (x, y), r, max(1, int(4 * k)))
+                circle(surf, p.color, (x, y), r, max(1, int(4 * k)))
             elif p.kind == "star":
                 s = p.size * k + 1
                 pygame.draw.line(surf, p.color, (x - s, y), (x + s, y), 3)
@@ -83,7 +84,7 @@ class Particles:
                 w = abs(math.cos(p.spin)) * p.size + 1
                 pygame.draw.rect(surf, p.color, (x - w / 2, y - p.size / 2, w, p.size))
             else:
-                pygame.draw.circle(surf, p.color, (x, y), max(1, p.size * k))
+                circle(surf, p.color, (x, y), max(1, p.size * k))
 
 
 class Snow:
@@ -106,4 +107,4 @@ class Snow:
 
     def draw(self, surf):
         for x, y, s in self.flakes:
-            pygame.draw.circle(surf, WHITE, (x, y), s)
+            circle(surf, WHITE, (x, y), s)
