@@ -2,6 +2,8 @@
 
 A gentle side-scrolling platformer made for a toddler named Diana. She runs and jumps through ten themed worlds in her favourite dress, with her border collie trotting behind her, collecting treasures on the way to the pink heart flag.
 
+**Play it in your browser (works on phones too):** https://tonymoyoy.github.io/dianas-big-adventure/
+
 There are no enemies, no lives and no timer. Falling into a hole just bounces her back out on a trampoline. Everything is drawn and every sound and song is synthesized in code, so there are no image or audio files.
 
 ## Getting started
