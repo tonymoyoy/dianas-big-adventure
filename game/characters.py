@@ -77,8 +77,8 @@ class Dog:
 DOGS = {
     "azulita": Dog("azulita", "Azulita", coat=(52, 48, 60), marking=(250, 250, 248),
                    shade=(85, 78, 95), collar=(80, 165, 255)),
-    "vainilla": Dog("vainilla", "Vainilla", coat=(250, 250, 246), marking=(250, 250, 246),
-                    shade=(232, 222, 215), collar=(255, 90, 160)),
+    "vainilla": Dog("vainilla", "Vainilla", coat=(255, 231, 201), marking=(255, 231, 201),   # light brown #ffe7c9
+                    shade=(235, 195, 155), collar=(255, 90, 160)),
 }
 DEFAULT_DOG = "azulita"
 

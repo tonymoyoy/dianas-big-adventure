@@ -39,7 +39,7 @@ The menus also work with the mouse.
 ## How a game goes
 
 1. **Pick a dress:** 10 outfits, from Pink Princess and Snow Queen to Little Mermaid, Rainbow and Starry Night.
-2. **Pick a dog:** Azulita (black and white border collie) or Vainilla (all-white border collie).
+2. **Pick a dog:** Azulita (black and white border collie) or Vainilla (light brown border collie).
 3. **Choose a world:** finishing a world unlocks the next.
 4. **Play:** reach the pink heart flag. Collecting every item is optional.
 
