@@ -1,7 +1,7 @@
-"""Diana's Big Adventure — an easy side-scroller with 5 worlds.
+"""Diana's Big Adventure — an easy side-scroller with 10 worlds.
 
     python main.py            play
-    python main.py --level 3  jump straight into level 3 (1-5)
+    python main.py --level 3  jump straight into level 3 (1-10)
     python main.py --smoke    headless self-test: an autopilot plays every level
 """
 import argparse
@@ -11,7 +11,7 @@ import sys
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--level", type=int, help="start directly in this level (1-5)")
+    parser.add_argument("--level", type=int, help="start directly in this level (1-10)")
     parser.add_argument("--smoke", action="store_true", help="run the headless autopilot test")
     args = parser.parse_args()
 

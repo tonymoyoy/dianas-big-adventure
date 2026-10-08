@@ -6,7 +6,7 @@ import pygame
 from .camera import Camera
 from .effects import Particles, Snow
 from .levels import LEVELS
-from .characters import DOGS, PuppyFollower, draw_diana, draw_puppy
+from .characters import DOGS, OUTFITS, PuppyFollower, draw_diana, draw_puppy
 from .player import Player
 from .settings import FALL_LIMIT, GOLD, HEIGHT, OUTLINE, TILE, TITLE, WHITE, WIDTH
 from .tiles import Level
@@ -96,13 +96,13 @@ class TitleScene(Scene):
         c = self.app.controls
         if c.confirm or c.jump_pressed:
             self.app.sound.play("select")
-            self.app.switch(DogSelectScene(self.app))
+            self.app.switch(OutfitSelectScene(self.app))
         elif c.back:
             self.app.running = False
 
     def handle_event(self, e):
         if e.type == pygame.MOUSEBUTTONDOWN:
-            self.app.switch(DogSelectScene(self.app))
+            self.app.switch(OutfitSelectScene(self.app))
 
     def draw(self, surf):
         world = WORLDS["meadow"]
@@ -110,7 +110,8 @@ class TitleScene(Scene):
         pygame.draw.rect(surf, world.ground_top, (0, HEIGHT - 70, WIDTH, 16))
         pygame.draw.rect(surf, world.ground, (0, HEIGHT - 56, WIDTH, 56))
         bob = abs(math.sin(self.t * 3)) * 40
-        draw_diana(surf, WIDTH / 2 - 30, HEIGHT - 70 - bob, 1, 0, self.t * 6, bob < 2, self.t, scale=2.0)
+        draw_diana(surf, WIDTH / 2 - 30, HEIGHT - 70 - bob, 1, 0, self.t * 6, bob < 2, self.t, scale=2.0,
+                   outfit=self.app.outfit)
         draw_puppy(surf, WIDTH / 2 - 130, HEIGHT - 70 - abs(math.sin(self.t * 3 - 0.5)) * 25, 1, self.t, True, scale=2.0,
                    dog=self.app.dog)
         for i, w in enumerate(WORLDS.values()):
@@ -120,6 +121,70 @@ class TitleScene(Scene):
         if (self.t % 1.2) < 0.85:
             draw_text(surf, "Press SPACE to play!", self.app.font_mid, (WIDTH / 2, 200))
         draw_text(surf, "M: music on/off", self.app.font_small, (WIDTH - 110, HEIGHT - 24))
+
+
+# ---------------------------------------------------------------- outfit select
+class OutfitSelectScene(Scene):
+    """Pick Diana's dress: ten outfits in two rows of five."""
+    music = "title"
+    COLS, CARD_W, CARD_H, GAP = 5, 160, 168, 18
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.keys = list(OUTFITS)
+        self.selected = self.keys.index(app.outfit)
+
+    def _card_rect(self, i):
+        row, col = divmod(i, self.COLS)
+        total = self.COLS * self.CARD_W + (self.COLS - 1) * self.GAP
+        x = (WIDTH - total) // 2 + col * (self.CARD_W + self.GAP)
+        return pygame.Rect(x, 106 + row * (self.CARD_H + self.GAP), self.CARD_W, self.CARD_H)
+
+    def _choose(self, i):
+        self.app.save.outfit = self.keys[i]
+        self.app.save.save()
+        self.app.sound.play("select")
+        self.app.switch(DogSelectScene(self.app))
+
+    def handle_event(self, e):
+        if e.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN):
+            for i in range(len(self.keys)):
+                if self._card_rect(i).collidepoint(e.pos):
+                    self.selected = i
+                    if e.type == pygame.MOUSEBUTTONDOWN:
+                        self._choose(i)
+
+    def update(self, dt):
+        super().update(dt)
+        c = self.app.controls
+        if c.nav_x:
+            new = max(0, min(len(self.keys) - 1, self.selected + c.nav_x))
+            if new != self.selected:
+                self.selected = new
+                self.app.sound.play("select")
+        if c.confirm or c.jump_pressed:
+            self._choose(self.selected)
+        elif c.back:
+            self.app.switch(TitleScene(self.app))
+
+    def draw(self, surf):
+        world = WORLDS["meadow"]
+        world.draw_background(surf, self.t * 30, self.t)
+        draw_text(surf, "Pick a dress!", self.app.font_big, (WIDTH / 2, 52), GOLD, width=4)
+        for i, key in enumerate(self.keys):
+            outfit = OUTFITS[key]
+            rect = self._card_rect(i)
+            sel = i == self.selected
+            if sel:
+                rect = rect.inflate(12, 12).move(0, math.sin(self.t * 4) * 3)
+            panel(surf, rect, 235 if sel else 170, (255, 235, 245))
+            pygame.draw.rect(surf, outfit.dress if sel else OUTLINE, rect, 6 if sel else 4, border_radius=24)
+            hop = abs(math.sin(self.t * 5)) * 12 if sel else 0
+            draw_diana(surf, rect.centerx, rect.bottom - 18 - hop, 1, 0, 0, hop < 2, self.t + i,
+                       scale=2.15, outfit=key)
+        name = OUTFITS[self.keys[self.selected]].name
+        draw_text(surf, name, self.app.font_mid, (WIDTH / 2, 484))
+        draw_text(surf, "Left / Right to choose,  SPACE to wear it!", self.app.font_small, (WIDTH / 2, 522))
 
 
 # ---------------------------------------------------------------- dog select
@@ -163,7 +228,7 @@ class DogSelectScene(Scene):
         if c.confirm or c.jump_pressed:
             self._choose(self.selected)
         elif c.back:
-            self.app.switch(TitleScene(self.app))
+            self.app.switch(OutfitSelectScene(self.app))
 
     def draw(self, surf):
         world = WORLDS["meadow"]
@@ -190,17 +255,37 @@ class DogSelectScene(Scene):
 
 # ---------------------------------------------------------------- level select
 class LevelSelectScene(Scene):
+    """Worlds shown five at a time; moving past the last card flips to the next page."""
     music = "title"
     CARD_W, CARD_H, GAP = 160, 250, 20
+    PER_PAGE = 5
 
     def __init__(self, app, selected=None):
         super().__init__(app)
         self.selected = selected if selected is not None else app.save.unlocked - 1
 
+    @property
+    def page(self):
+        return self.selected // self.PER_PAGE
+
+    @property
+    def pages(self):
+        return (len(LEVELS) + self.PER_PAGE - 1) // self.PER_PAGE
+
+    def _page_levels(self):
+        first = self.page * self.PER_PAGE
+        return range(first, min(len(LEVELS), first + self.PER_PAGE))
+
     def _card_rect(self, i):
-        total = len(LEVELS) * self.CARD_W + (len(LEVELS) - 1) * self.GAP
-        x = (WIDTH - total) // 2 + i * (self.CARD_W + self.GAP)
+        n = len(self._page_levels())
+        total = n * self.CARD_W + (n - 1) * self.GAP
+        x = (WIDTH - total) // 2 + (i % self.PER_PAGE) * (self.CARD_W + self.GAP)
         return pygame.Rect(x, 185, self.CARD_W, self.CARD_H)
+
+    def _arrow_rect(self, d):
+        r = pygame.Rect(0, 0, 44, 70)
+        r.center = (24 if d < 0 else WIDTH - 24, 185 + self.CARD_H // 2)
+        return r
 
     def _start(self, i):
         if i < self.app.save.unlocked:
@@ -209,13 +294,24 @@ class LevelSelectScene(Scene):
         else:
             self.app.sound.play("locked")
 
+    def _flip(self, d):
+        page = self.page + d
+        if 0 <= page < self.pages:
+            self.selected = page * self.PER_PAGE if d > 0 else min(len(LEVELS), (page + 1) * self.PER_PAGE) - 1
+            self.app.sound.play("select")
+
     def handle_event(self, e):
         if e.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN):
-            for i in range(len(LEVELS)):
+            for i in self._page_levels():
                 if self._card_rect(i).collidepoint(e.pos):
                     self.selected = i
                     if e.type == pygame.MOUSEBUTTONDOWN:
                         self._start(i)
+                    return
+            if e.type == pygame.MOUSEBUTTONDOWN:
+                for d in (-1, 1):
+                    if self._arrow_rect(d).collidepoint(e.pos):
+                        self._flip(d)
 
     def update(self, dt):
         super().update(dt)
@@ -233,7 +329,8 @@ class LevelSelectScene(Scene):
     def draw(self, surf):
         WORLDS[LEVELS[self.selected].world].draw_background(surf, self.t * 30, self.t)
         draw_text(surf, "Choose a world!", self.app.font_big, (WIDTH / 2, 56), GOLD, width=4)
-        for i, ldef in enumerate(LEVELS):
+        for i in self._page_levels():
+            ldef = LEVELS[i]
             world = WORLDS[ldef.world]
             rect = self._card_rect(i)
             sel = i == self.selected
@@ -242,8 +339,7 @@ class LevelSelectScene(Scene):
             card = pygame.Surface(rect.size)
             world.build()
             card.blit(pygame.transform.smoothscale(world.sky, rect.size), (0, 0))
-            pygame.draw.rect(card, world.ground, (0, rect.h - 60, rect.w, 60))
-            pygame.draw.rect(card, world.ground_top, (0, rect.h - 60, rect.w, 12))
+            card.blit(pygame.transform.scale(world.tile_top, (rect.w, 60)), (0, rect.h - 60))
             locked = i >= self.app.save.unlocked
             if not locked:
                 world.draw_item(card, rect.w / 2, rect.h / 2 - 10, 70 if sel else 60, self.t)
@@ -265,12 +361,26 @@ class LevelSelectScene(Scene):
                 best = self.app.save.best.get(i)
                 label = f"{best}/{total}" if best is not None else "New!"
                 draw_text(surf, label, self.app.font_small, (rect.centerx, rect.bottom - 26))
+        # Arrows to the other page(s) and page dots
+        for d in (-1, 1):
+            if 0 <= self.page + d < self.pages:
+                r = self._arrow_rect(d)
+                nudge = math.sin(self.t * 5) * 4 * d
+                tip = r.right if d > 0 else r.left
+                pts = [(tip + nudge, r.centery), (r.centerx - d * 14 + nudge, r.top), (r.centerx - d * 14 + nudge, r.bottom)]
+                pygame.draw.polygon(surf, GOLD, pts)
+                pygame.draw.polygon(surf, OUTLINE, pts, 3)
+        for p in range(self.pages):
+            x = WIDTH / 2 + (p - (self.pages - 1) / 2) * 28
+            pygame.draw.circle(surf, OUTLINE, (x, 450), 9)
+            pygame.draw.circle(surf, GOLD if p == self.page else WHITE, (x, 450), 6)
         sel_rect = self._card_rect(self.selected)
         hop = abs(math.sin(self.t * 4)) * 10
-        draw_diana(surf, sel_rect.centerx + 8, sel_rect.top - 14 - hop, 1, 0, 0, True, self.t)
+        draw_diana(surf, sel_rect.centerx + 8, sel_rect.top - 14 - hop, 1, 0, 0, True, self.t,
+                   outfit=self.app.outfit)
         draw_puppy(surf, sel_rect.centerx - 30, sel_rect.top - 14 - hop, 1, self.t, False, dog=self.app.dog)
-        draw_text(surf, WORLDS[LEVELS[self.selected].world].name, self.app.font_mid, (WIDTH / 2, 470))
-        draw_text(surf, "Left / Right to choose,  SPACE to go!", self.app.font_small, (WIDTH / 2, 515))
+        draw_text(surf, WORLDS[LEVELS[self.selected].world].name, self.app.font_mid, (WIDTH / 2, 482))
+        draw_text(surf, "Left / Right to choose,  SPACE to go!", self.app.font_small, (WIDTH / 2, 520))
 
 
 # ---------------------------------------------------------------- gameplay
@@ -286,6 +396,7 @@ class PlayScene(Scene):
         self.music = ldef.world
         self.level = Level(ldef.rows)
         self.player = Player(self.level.start)
+        self.player.outfit = app.outfit
         self.camera = Camera(self.level.pixel_w, self.level.pixel_h)
         self.camera.snap(self.player.rect)
         self.puppy = PuppyFollower(self.player, app.dog)
@@ -390,7 +501,7 @@ class PlayScene(Scene):
                 hop = abs(math.sin(self.timer * 6)) * 20
                 self.puppy.draw(surf, off, self.t, abs(math.sin(self.timer * 6 - 0.8)) * 14)
                 draw_diana(surf, self.player.x - off[0] + self.player.w / 2, self.player.y - off[1] + self.player.h - hop,
-                           1, 0, 0, False, self.t)
+                           1, 0, 0, False, self.t, outfit=self.player.outfit)
             else:
                 self.puppy.draw(surf, off, self.t)
                 self.player.draw(surf, off, self.t)
@@ -552,12 +663,13 @@ class EndScene(Scene):
     def draw(self, surf):
         WORLDS["chocolate"].draw_background(surf, self.t * 40, self.t)
         draw_text(surf, "You did it!", self.app.font_big, (WIDTH / 2, 100 + math.sin(self.t * 3) * 6), GOLD, width=4)
-        draw_text(surf, "All 5 worlds complete!", self.app.font_mid, (WIDTH / 2, 170))
+        draw_text(surf, f"All {len(LEVELS)} worlds complete!", self.app.font_mid, (WIDTH / 2, 170))
         for i, ldef in enumerate(LEVELS):
             a = self.t * 1.2 + i * math.tau / len(LEVELS)
             WORLDS[ldef.world].draw_item(surf, WIDTH / 2 + math.cos(a) * 170, 320 + math.sin(a) * 60, 50, self.t)
         hop = abs(math.sin(self.t * 5)) * 30
-        draw_diana(surf, WIDTH / 2 + 20, 380 - hop, 1, 0, 0, hop < 2, self.t, scale=2.2)
+        draw_diana(surf, WIDTH / 2 + 20, 380 - hop, 1, 0, 0, hop < 2, self.t, scale=2.2,
+                   outfit=self.app.outfit)
         draw_puppy(surf, WIDTH / 2 - 80, 380 - abs(math.sin(self.t * 5 - 0.6)) * 20, 1, self.t, True, scale=2.2,
                    dog=self.app.dog)
         draw_text(surf, f"You found {self.found} of {self.total} treasures!", self.app.font_mid, (WIDTH / 2, 440))

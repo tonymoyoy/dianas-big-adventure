@@ -37,6 +37,12 @@ class App:
         from .characters import DEFAULT_DOG, DOGS
         return self.save.dog if self.save.dog in DOGS else DEFAULT_DOG
 
+    @property
+    def outfit(self):
+        """Key of the dress Diana is wearing (see characters.OUTFITS)."""
+        from .characters import DEFAULT_OUTFIT, OUTFITS
+        return self.save.outfit if self.save.outfit in OUTFITS else DEFAULT_OUTFIT
+
     def switch(self, scene):
         self.scene = scene
         if scene.music:

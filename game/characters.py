@@ -1,4 +1,4 @@
-"""Drawing for Diana (the player) and her dog (Azulita or Vainilla), plus the puppy's follow logic.
+"""Drawing for Diana (the player, in one of her OUTFITS) and her dog (Azulita or Vainilla), plus the puppy's follow logic.
 
 The draw functions take the bottom-center point (cx, bottom) where the feet touch the ground.
 """
@@ -12,12 +12,54 @@ from .settings import OUTLINE, WHITE
 SKIN = (255, 214, 186)
 HAIR = (115, 65, 40)
 HAIR_LIGHT = (150, 90, 55)
-DRESS = (255, 120, 185)
-DRESS_DARK = (225, 75, 150)
-SASH = (255, 200, 230)
-SHOES = (190, 60, 140)
-CROWN = (255, 205, 60)
-GEM = (255, 90, 160)
+GOLD_CROWN = (255, 205, 60)
+SILVER_CROWN = (215, 225, 245)
+RAINBOW = [(240, 70, 80), (255, 160, 60), (255, 225, 70), (90, 200, 110), (80, 160, 255), (160, 100, 230)]
+
+
+class Outfit:
+    """One of Diana's dresses.
+
+    shape:   aline | ball (wide, to the ankles) | long (straight, to the ankles)
+             | tutu (short and puffy) | mermaid (fitted, flared fin hem)
+    pattern: none | dots | sparkle | scales | stars | spots | rainbow | hearts | flowers
+    """
+
+    def __init__(self, key, name, dress, sash, shoes, gem, shape="aline", pattern="none",
+                 pattern_color=WHITE, crown=GOLD_CROWN):
+        self.key, self.name = key, name
+        self.dress, self.sash, self.shoes, self.gem, self.crown = dress, sash, shoes, gem, crown
+        self.shape, self.pattern, self.pattern_color = shape, pattern, pattern_color
+
+
+OUTFITS = {o.key: o for o in (
+    Outfit("pink", "Pink Princess", (255, 120, 185), (255, 200, 230), (190, 60, 140), (255, 90, 160),
+           pattern="dots"),
+    Outfit("snow", "Snow Queen", (130, 200, 245), (225, 245, 255), (90, 150, 210), (120, 200, 255),
+           shape="long", pattern="sparkle", crown=SILVER_CROWN),
+    Outfit("mermaid", "Little Mermaid", (40, 200, 180), (190, 130, 230), (30, 150, 140), (190, 130, 230),
+           shape="mermaid", pattern="scales", pattern_color=(130, 240, 220)),
+    Outfit("sunshine", "Sunshine Gown", (255, 205, 60), (255, 240, 170), (220, 150, 40), (255, 120, 60),
+           shape="ball", pattern="sparkle"),
+    Outfit("tutu", "Lavender Tutu", (190, 140, 240), (240, 220, 255), (140, 90, 200), (255, 120, 200),
+           shape="tutu", pattern="stars"),
+    Outfit("strawberry", "Strawberry", (235, 60, 80), (110, 200, 90), (170, 30, 60), (110, 200, 90),
+           pattern="spots", pattern_color=(255, 230, 120)),
+    Outfit("rainbow", "Rainbow", (255, 150, 190), WHITE, (90, 160, 255), (90, 160, 255),
+           pattern="rainbow"),
+    Outfit("mint", "Mint Hearts", (150, 225, 190), (255, 190, 215), (70, 170, 130), (255, 120, 170),
+           shape="tutu", pattern="hearts", pattern_color=(255, 120, 170)),
+    Outfit("night", "Starry Night", (60, 65, 150), (255, 215, 90), (35, 35, 90), (255, 215, 90),
+           shape="ball", pattern="stars", pattern_color=(255, 215, 90)),
+    Outfit("garden", "Flower Garden", (255, 150, 120), (255, 230, 200), (220, 100, 80), (120, 200, 100),
+           shape="long", pattern="flowers"),
+)}
+DEFAULT_OUTFIT = "pink"
+
+# Skirt trapezoids: (hem half-width, hem height above the feet). The waist is 8 wide at height 27.
+SKIRTS = {"aline": (17, 11), "ball": (21, 4), "long": (14, 3), "tutu": (21, 16), "mermaid": (16, 2)}
+# Where pattern marks sit on a skirt: (fraction of half-width, fraction of the way down to the hem)
+PATTERN_SPOTS = [(-0.55, 0.45), (0.1, 0.3), (0.6, 0.55), (-0.2, 0.75), (0.35, 0.85), (-0.7, 0.9)]
 BLUSH = (255, 150, 160)
 
 NOSE = (30, 25, 35)
@@ -40,7 +82,9 @@ DOGS = {
 DEFAULT_DOG = "azulita"
 
 
-def draw_diana(surf, cx, bottom, facing=1, squash=0.0, run_phase=0.0, on_ground=True, t=0.0, scale=1.0):
+def draw_diana(surf, cx, bottom, facing=1, squash=0.0, run_phase=0.0, on_ground=True, t=0.0, scale=1.0,
+               outfit=DEFAULT_OUTFIT):
+    outfit = OUTFITS.get(outfit, OUTFITS[DEFAULT_OUTFIT])
     sx = scale * (1 + squash)
     sy = scale * (1 - squash)
     f = facing
@@ -69,26 +113,16 @@ def draw_diana(surf, cx, bottom, facing=1, squash=0.0, run_phase=0.0, on_ground=
         pygame.draw.line(surf, SKIN, hip, foot, max(2, int(4 * scale)))
         shoe = pygame.Rect(0, 0, 10 * scale, 6 * scale)
         shoe.center = (foot[0] + 2 * f * scale, foot[1] + 1)
-        pygame.draw.ellipse(surf, SHOES, shoe)
+        pygame.draw.ellipse(surf, outfit.shoes, shoe)
         pygame.draw.ellipse(surf, OUTLINE, shoe, 1)
 
-    # Twirly skirt (A-line with a wavy hem)
-    hem = []
-    for i in range(9):
-        k = i / 8
-        dx = -17 + 34 * k
-        wave = math.sin(t * 6 + k * 6) * (1.5 if on_ground and abs(swing) > 0.5 else 0.8)
-        hem.append(P(dx, 11 + wave + (2 if i % 2 else 0)))
-    skirt = [P(-8, 27)] + hem + [P(8, 27)]
-    poly(DRESS, skirt)
-    for i in range(1, 8, 2):
-        pygame.draw.circle(surf, WHITE, hem[i], 1.6 * scale)
+    _draw_skirt(surf, outfit, P, poly, t, scale, on_ground and abs(swing) > 0.5)
 
     # Bodice + sash
     body = [P(-7, 37), P(7, 37), P(8, 26), P(-8, 26)]
-    poly(DRESS, body)
-    pygame.draw.line(surf, SASH, P(-8, 27), P(8, 27), max(2, int(3 * scale)))
-    pygame.draw.circle(surf, SASH, P(-7, 27), 3 * scale)
+    poly(outfit.dress, body)
+    pygame.draw.line(surf, outfit.sash, P(-8, 27), P(8, 27), max(2, int(3 * scale)))
+    pygame.draw.circle(surf, outfit.sash, P(-7, 27), 3 * scale)
     # Puffy sleeves + arms
     for side in (-1, 1):
         sw = -swing * side if on_ground else -6
@@ -96,7 +130,7 @@ def draw_diana(surf, cx, bottom, facing=1, squash=0.0, run_phase=0.0, on_ground=
         pygame.draw.line(surf, SKIN, P(side * 8, 34), hand, max(2, int(4 * scale)))
         pygame.draw.circle(surf, SKIN, hand, 2.5 * scale)
         pygame.draw.circle(surf, OUTLINE, P(side * 8, 35), 4.5 * scale + 1.5)
-        pygame.draw.circle(surf, DRESS, P(side * 8, 35), 4.5 * scale)
+        pygame.draw.circle(surf, outfit.dress, P(side * 8, 35), 4.5 * scale)
 
     # Head
     pygame.draw.circle(surf, OUTLINE, head, head_r + 2)
@@ -122,12 +156,82 @@ def draw_diana(surf, cx, bottom, facing=1, squash=0.0, run_phase=0.0, on_ground=
 
     # Princess crown
     crown = [P(-6, 55), P(-6, 61), P(-3, 58), P(0, 63), P(3, 58), P(6, 61), P(6, 55)]
-    poly(CROWN, crown, 1)
-    pygame.draw.circle(surf, GEM, P(0, 57.5), 1.8 * scale)
+    poly(outfit.crown, crown, 1)
+    pygame.draw.circle(surf, outfit.gem, P(0, 57.5), 1.8 * scale)
     if (t * 1.3) % 2 < 0.25:  # little twinkle
         tw = P(6, 63)
         pygame.draw.line(surf, WHITE, (tw[0] - 3, tw[1]), (tw[0] + 3, tw[1]), 2)
         pygame.draw.line(surf, WHITE, (tw[0], tw[1] - 3), (tw[0], tw[1] + 3), 2)
+
+
+def _draw_skirt(surf, outfit, P, poly, t, scale, twirl):
+    """The skirt in the outfit's shape, then its pattern on top."""
+    hem_w, hem_y = SKIRTS[outfit.shape]
+    hem = []
+    for i in range(9):
+        k = i / 8
+        wave = math.sin(t * 6 + k * 6) * (1.5 if twirl else 0.8)
+        zig = (3 if outfit.shape == "tutu" else 2) if i % 2 else 0
+        hem.append(P(-hem_w + 2 * hem_w * k, hem_y + wave + zig))
+    if outfit.shape == "mermaid":   # fitted down to the knees, then a fin
+        poly(outfit.dress, [P(-8, 27), P(-7, 13)] + hem + [P(7, 13), P(8, 27)])
+    else:
+        poly(outfit.dress, [P(-8, 27)] + hem + [P(8, 27)])
+    if outfit.shape == "tutu":      # second, lighter layer of tulle
+        light = [min(255, c + 45) for c in outfit.dress]
+        poly(light, [P(-8, 27), P(-hem_w + 3, 19), P(-hem_w / 2, 21), P(0, 19), P(hem_w / 2, 21), P(hem_w - 3, 19), P(8, 27)], 1)
+
+    def at(fx, fy):   # a point inside the skirt
+        if outfit.shape == "mermaid":
+            return P(fx * 6, 27 - 12 * fy)
+        return P(fx * (8 + (hem_w - 8) * fy) * 0.8, 27 - (27 - hem_y) * fy)
+
+    r = 1.7 * scale
+    c = outfit.pattern_color
+    pattern = outfit.pattern
+    if pattern == "dots":
+        for i in range(1, 8, 2):
+            pygame.draw.circle(surf, c, hem[i], 1.6 * scale)
+    elif pattern == "rainbow":
+        n = len(RAINBOW)
+        for j, color in enumerate(RAINBOW):
+            k0, k1 = j / n, (j + 1) / n
+            w0, w1 = 8 + (hem_w - 8) * k0, 8 + (hem_w - 8) * k1
+            y0, y1 = 27 - (27 - hem_y) * k0, 27 - (27 - hem_y) * k1
+            pygame.draw.polygon(surf, color, [P(-w0, y0), P(w0, y0), P(w1, y1), P(-w1, y1)])
+        pygame.draw.polygon(surf, OUTLINE, [P(-8, 27)] + hem + [P(8, 27)], 2)
+    elif pattern == "scales":
+        for row, fy in enumerate((0.25, 0.55, 0.85)):
+            for fx in (-0.6, 0, 0.6):
+                x, y = at(fx + (0.3 if row % 2 else 0), fy)
+                pygame.draw.arc(surf, c, (x - 2 * scale, y - 1.5 * scale, 4 * scale, 3 * scale), math.pi, math.tau, 1)
+        for i in range(1, 8, 2):
+            pygame.draw.line(surf, c, hem[i], P(0, 6), 1)
+    else:
+        for fx, fy in PATTERN_SPOTS:
+            x, y = at(fx, fy)
+            if pattern == "sparkle":
+                if (t * 2 + fx * 3) % 2 < 1.5:
+                    pygame.draw.line(surf, c, (x - r, y), (x + r, y), 1)
+                    pygame.draw.line(surf, c, (x, y - r), (x, y + r), 1)
+            elif pattern == "spots":
+                pygame.draw.ellipse(surf, c, (x - r * 0.5, y - r * 0.7, r, r * 1.4))
+            elif pattern == "stars":
+                pts = []
+                for i in range(10):
+                    rr = r * 1.3 if i % 2 == 0 else r * 0.55
+                    a = -math.pi / 2 + i * math.pi / 5
+                    pts.append((x + math.cos(a) * rr, y + math.sin(a) * rr))
+                pygame.draw.polygon(surf, c, pts)
+            elif pattern == "hearts":
+                pygame.draw.circle(surf, c, (x - r * 0.5, y - r * 0.3), r * 0.6)
+                pygame.draw.circle(surf, c, (x + r * 0.5, y - r * 0.3), r * 0.6)
+                pygame.draw.polygon(surf, c, [(x - r * 1.05, y - r * 0.15), (x + r * 1.05, y - r * 0.15), (x, y + r)])
+            elif pattern == "flowers":
+                for a in range(5):
+                    ang = t + a * math.tau / 5
+                    pygame.draw.circle(surf, c, (x + math.cos(ang) * r * 0.8, y + math.sin(ang) * r * 0.8), r * 0.55)
+                pygame.draw.circle(surf, (255, 210, 70), (x, y), r * 0.5)
 
 
 def draw_puppy(surf, cx, bottom, facing=1, t=0.0, moving=False, scale=1.0, dog=DEFAULT_DOG):

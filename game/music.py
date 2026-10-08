@@ -56,6 +56,25 @@ SONGS = {
                  "E5 - - - A5 - - - | C6 - - - A5 - - - | G5 - E5 - G5 - C6 - | B5 - - - - - . . | "
                  "A5 - B5 - C6 - E6 - | D6 - C6 - A5 - - - | B5 - G5 - D6 - B5 - | A5 - - - - - . .",
                  lead="triangle", arp=True, drums=False),
+    "woods": Song(125, "Am F C G Am F G E",
+                  "A4 - C5 - E5 - A5 - | F5 - E5 - C5 - A4 - | G4 - C5 - E5 - G5 - | D5 - - - B4 - - - | "
+                  "A4 - C5 E5 A5 - G5 - | F5 - A5 - C6 - A5 - | G5 - F5 - D5 - B4 - | E5 - - - - - . .",
+                  duty=0.125, arp=True),
+    "themepark": Song(160, "C Am F G C Am F G",
+                      "C5 E5 G5 E5 C6 - G5 - | A5 - E5 - C5 - E5 - | F5 A5 C6 A5 F5 - A5 - | G5 - B5 - D6 - - - | "
+                      "E6 D6 C6 - G5 - E5 - | A5 G5 E5 - C5 - A4 - | F5 - A5 - C6 - A5 - | G5 - - - - - . .",
+                      duty=0.5),
+    "playground": Song(145, "G C D G G C D G",
+                       "G5 - B5 - D6 - B5 - | C6 - E6 - C6 - G5 - | A5 - F#5 - D5 - F#5 - | G5 - - - . . D5 - | "
+                       "G5 A5 B5 - G5 - B5 - | E5 G5 C6 - E6 - C6 - | D6 C6 A5 - F#5 - A5 - | G5 - - - - - . ."),
+    "sky": Song(105, "F C Dm A# F C A# C",
+                "C6 - - - A5 - F5 - | G5 - - - E5 - C5 - | D5 - F5 - A5 - D6 - | C6 - A#5 - A5 - G5 - | "
+                "A5 - C6 - F6 - - - | E6 - D6 - C6 - G5 - | A#5 - A5 - G5 - F5 - | E5 - - - - - . .",
+                lead="triangle", arp=True, drums=False),
+    "dream": Song(150, "C Em F G C Am Dm G",
+                  "E5 G5 C6 . G5 . E5 G5 | B5 - G5 - E5 - . . | A5 C6 F6 . C6 . A5 C6 | B5 - D6 - G5 - . . | "
+                  "C6 - E6 - G6 - E6 - | C6 - A5 - E5 - A5 - | D6 F6 A5 - D6 - F6 - | G5 - - - - - . .",
+                  duty=0.5, arp=True),
 }
 
 

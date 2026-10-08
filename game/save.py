@@ -1,4 +1,4 @@
-"""Progress saving: which levels are unlocked, the most items found per level, and the chosen dog."""
+"""Progress saving: which levels are unlocked, the most items found per level, and the chosen dog and outfit."""
 import json
 from pathlib import Path
 
@@ -13,6 +13,7 @@ class SaveData:
         self.unlocked = 1
         self.best = {}
         self.dog = None        # chosen dog key, see characters.DOGS
+        self.outfit = None     # chosen outfit key, see characters.OUTFITS
         if persist:
             self._load()
 
@@ -21,7 +22,10 @@ class SaveData:
             data = json.loads(self.path.read_text())
             self.unlocked = max(1, min(self.num_levels, int(data.get("unlocked", 1))))
             self.best = {int(k): int(v) for k, v in data.get("best", {}).items()}
+            if self.best:   # levels added later unlock for anyone who already beat the one before
+                self.unlocked = max(self.unlocked, min(self.num_levels, max(self.best) + 2))
             self.dog = data.get("dog") if isinstance(data.get("dog"), str) else None
+            self.outfit = data.get("outfit") if isinstance(data.get("outfit"), str) else None
         except (OSError, ValueError, TypeError, AttributeError):
             pass
 
@@ -34,6 +38,6 @@ class SaveData:
         if not self.persist:
             return
         try:
-            self.path.write_text(json.dumps({"unlocked": self.unlocked, "best": self.best, "dog": self.dog}, indent=2))
+            self.path.write_text(json.dumps({"unlocked": self.unlocked, "best": self.best, "dog": self.dog, "outfit": self.outfit}, indent=2))
         except OSError:
             pass

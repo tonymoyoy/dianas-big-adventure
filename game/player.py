@@ -1,7 +1,7 @@
 """Diana, the player character: forgiving platformer physics."""
 import pygame
 
-from .characters import draw_diana
+from .characters import DEFAULT_OUTFIT, draw_diana
 from .settings import (AIR_ACCEL, COYOTE_TIME, FRICTION, GROUND_ACCEL, JUMP_BUFFER,
                        MAX_FALL, PLAYER_H, PLAYER_W, RUN_SPEED)
 
@@ -15,6 +15,7 @@ def approach(value, target, step):
 class Player:
     def __init__(self, bottom_center):
         self.w, self.h = PLAYER_W, PLAYER_H
+        self.outfit = DEFAULT_OUTFIT
         self.reset(bottom_center)
 
     def reset(self, bottom_center):
@@ -139,4 +140,5 @@ class Player:
     def draw(self, surf, offset, t):
         ox, oy = offset
         draw_diana(surf, self.x - ox + self.w / 2, self.y - oy + self.h,
-                   self.facing, self.squash, self.run_phase, self.on_ground, t)
+                   self.facing, self.squash, self.run_phase, self.on_ground, t,
+                   outfit=self.outfit)
