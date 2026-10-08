@@ -1,16 +1,25 @@
+# Packages the browser build (pygbag) must download; pygame-ce is always included there.
+# /// script
+# dependencies = ["numpy"]
+# ///
 """Diana's Big Adventure — an easy side-scroller with 10 worlds.
 
     python main.py            play
     python main.py --level 3  jump straight into level 3 (1-10)
     python main.py --touch    show the phone touch buttons (the mouse acts as a finger)
     python main.py --smoke    headless self-test: an autopilot plays every level
+
+The same file runs in a web browser when built with pygbag (see README).
 """
 import argparse
+import asyncio
 import os
 import sys
 
+import pygame  # noqa: F401  (pygbag only sets pygame up when main.py imports it at the top)
 
-def main():
+
+async def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--level", type=int, help="start directly in this level (1-10)")
     parser.add_argument("--touch", action="store_true", help="show touch buttons; the mouse acts as a finger")
@@ -36,8 +45,8 @@ def main():
         first = PlayScene(app, max(1, min(len(LEVELS), args.level)) - 1)
     else:
         first = TitleScene(app)
-    app.run(first)
+    await app.run(first)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

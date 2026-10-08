@@ -1,4 +1,7 @@
 """Window, main loop and scene switching."""
+import asyncio
+import sys
+
 import pygame
 
 from .input import AutoPilot, Controls
@@ -7,6 +10,9 @@ from .music import Music
 from .save import SaveData
 from .settings import FPS, HEIGHT, TITLE, WIDTH
 from .sound import RATE, Sound
+
+# Running in a web browser (built with pygbag)
+WEB = sys.platform == "emscripten"
 
 FONT_NAMES = ["comicneue", "comicsansms", "arialroundedmtbold", "ubuntu", "dejavusans"]
 
@@ -17,7 +23,9 @@ class App:
         pygame.init()
         pygame.display.set_caption(TITLE)
         try:
-            self.screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED | pygame.RESIZABLE)
+            # In the browser, the web page scales the game to fit instead
+            flags = 0 if WEB else pygame.SCALED | pygame.RESIZABLE
+            self.screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
         except pygame.error:
             self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
@@ -48,7 +56,7 @@ class App:
         if scene.music:
             self.music.play(scene.music)
 
-    def run(self, first_scene):
+    async def run(self, first_scene):
         self.switch(first_scene)
         while self.running:
             dt = min(self.clock.tick(FPS) / 1000, 1 / 30)
@@ -56,7 +64,7 @@ class App:
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
                     self.running = False
-                elif e.type == pygame.KEYDOWN and e.key == pygame.K_F11:
+                elif e.type == pygame.KEYDOWN and e.key == pygame.K_F11 and not WEB:
                     pygame.display.toggle_fullscreen()
                 elif e.type == pygame.KEYDOWN and e.key == pygame.K_m:
                     self.music.toggle()
@@ -66,6 +74,7 @@ class App:
             self.scene.update(dt)
             self.scene.draw(self.screen)
             pygame.display.flip()
+            await asyncio.sleep(0)   # hands the frame to the browser (pygbag); no cost on desktop
         pygame.quit()
 
 

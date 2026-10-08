@@ -24,6 +24,19 @@ The game uses [pygame-ce](https://pyga.me) (the community edition of pygame) for
 | `main.py --touch` | Show the phone touch buttons; the mouse acts as a finger (for testing) |
 | `main.py --smoke` | Headless self-test: an autopilot plays every level |
 
+## Playing in a web browser (phones and tablets too)
+
+The game also runs in a web browser, built with [pygbag](https://pygame-web.github.io). The browser version shows touch buttons as soon as the screen is touched. Turn the phone sideways (landscape).
+
+```bash
+.venv/bin/pip install pygbag==0.9.3
+.venv/bin/python build_web.py --serve     # then open http://127.0.0.1:8000
+```
+
+Use `127.0.0.1`, not `localhost`: pygbag treats `http://localhost:8...` as its own development server and won't find numpy. The first load downloads Python and numpy (about 15 MB), then the browser caches them. Progress is saved in the browser.
+
+**Publishing it online:** the workflow in `.github/workflows/pages.yml` builds the web version and publishes it on GitHub Pages every time `main` is pushed. Turn it on once in the repository's **Settings → Pages → Source: GitHub Actions**. The game is then at `https://<your-user>.github.io/<repo-name>/`. Open it on the phone and use "Add to Home screen" for an app-like icon.
+
 ## Controls
 
 | Action | Keyboard | Gamepad | Touch screen |
@@ -71,7 +84,8 @@ Choices, unlocked worlds and best scores are saved in `save.json` in the project
 ## Project layout
 
 ```
-main.py            entry point and command-line options
+main.py            entry point and command-line options (async main loop, also used in the browser)
+build_web.py       builds the browser version with pygbag into build/web
 game/
   app.py           window, main loop, scene switching, smoke test
   scenes.py        title, dress/dog/world pickers, gameplay, results, ending
@@ -85,7 +99,7 @@ game/
   sound.py         sound effects
   input.py         keyboard/gamepad/touch input and the test autopilot
   touch.py         on-screen touch buttons for phones and tablets
-  save.py          progress saving
+  save.py          progress saving (save.json, or browser localStorage on the web)
 tests/             level, physics, music, outfit, dog, drawing and touch tests
 ```
 
